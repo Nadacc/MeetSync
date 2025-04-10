@@ -4,9 +4,9 @@ import * as yup from "yup";
 import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { resetPassword } from "../../features/authSlice";
-import Input from "../../ui/Input";
-import Label from "../../ui/Label";
-import Button from "../../ui/Button";
+import Input from "../../components/ui/Input";
+import Label from "../../components/ui/Label";
+import Button from "../../components/ui/Button";
 
 const schema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),

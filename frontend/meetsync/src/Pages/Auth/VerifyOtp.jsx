@@ -6,9 +6,9 @@ import { useEffect, useState } from 'react'
 
 
 // Import your reusable components
-import Label from '../../ui/Label'
-import Input from '../../ui/Input'
-import Button from '../../ui/Button'
+import Label from '../../components/ui/Label'
+import Input from '../../components/ui/Input'
+import Button from '../../components/ui/Button'
 
 function VerifyOtp() {
   const dispatch = useDispatch()

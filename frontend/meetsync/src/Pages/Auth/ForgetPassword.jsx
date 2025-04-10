@@ -3,9 +3,9 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useDispatch } from "react-redux";
 import { forgotPassword } from "../../features/authSlice";
-import Label from "../../ui/Label";
-import Input from "../../ui/Input";
-import Button from "../../ui/Button";
+import Label from '../../components/ui/Label'
+import Input from '../../components/ui/Input'
+import Button from '../../components/ui/Button'
 import { useNavigate } from "react-router-dom";
 
 const schema = yup.object({

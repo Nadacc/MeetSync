@@ -5,8 +5,8 @@ import {
   Video,
   CalendarDays
 } from "lucide-react";
-import Input from "../ui/Input";
-import Label from "../ui/Label";
+import Input from '../components/ui/Input';
+import Label from '../components/ui/Label';
 
 const navItems = [
   { id: "create", icon: PlusCircle, label: "Create Meeting" },

@@ -1,6 +1,6 @@
 import React from 'react';
 import Topbar from './Topbar';
-import Header from '../ui/Header';
+import Header from '../components/ui/Header';
 
 const PageLayout = ({ title, children }) => {
   return (

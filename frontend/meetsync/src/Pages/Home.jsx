@@ -4,7 +4,7 @@ import CreateMeeting from '../components/CreateMeeting'
 import Meeting from "../components/Meeting";
 import Calender from "../components/Calender";
 import Navbar from "../components/Navbar";
-import Header from "../ui/Header";
+//import Header from "../ui/Header";
 import Topbar from "../components/Topbar";
 
 function Home() {

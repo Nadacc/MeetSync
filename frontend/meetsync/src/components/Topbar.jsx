@@ -7,7 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+} from '../components/ui/dropdown-menu'
 
 import { LogOut, User } from "lucide-react";
 import { logoutUser } from "../features/authSlice";
