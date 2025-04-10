@@ -3,7 +3,7 @@ import CustomError from './customError.js';
 
 export const generateAccessToken = (user) => {
   const payload = { id: user._id };
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30m' });
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
 };
 
 export const generateRefreshToken = (user) => {

@@ -1,7 +1,7 @@
 import React from 'react'
-import Button from '../../ui/Button'
-import Label from '../../ui/Label'
-import Input from '../../ui/Input'
+import Button from '.././../components/ui/Button'
+import Label from '.././../components/ui/Label'
+import Input from '.././../components/ui/Input'
 import { useForm } from 'react-hook-form'
 import { DevTool } from '@hookform/devtools'
 import { useDispatch, useSelector } from 'react-redux'
@@ -25,7 +25,7 @@ function Login() {
     dispatch(loginUser(data))
       .unwrap()
       .then(() => {
-        navigate('/home') 
+        navigate('/') 
       })
       .catch((err) => {
         console.log('Login failed:', err)
@@ -73,6 +73,13 @@ function Login() {
             })}
           />
           {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+
+          <p
+            onClick={() => navigate('/forgot-password')}
+            className="text-sm text-blue-600 hover:underline cursor-pointer text-right mt-1"
+          >
+            Forgot Password?
+          </p>
         </div>
 
         {/* Error from API */}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect ,useState} from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { signupSchema } from '../../Validation/authSchema'
@@ -11,6 +11,7 @@ import { registerUser } from '../../features/authSlice'
 import { useNavigate } from 'react-router-dom'
 import { Controller } from 'react-hook-form'
 import SearchableSelect from '../../ui/SearchableSelect'
+import axiosInstance from '../../api/axiosInstance'
 
 import { timezones } from '../../utils/timezones'
 const timezoneOptions = timezones.map((tz) => ({
@@ -36,14 +37,33 @@ function Signup() {
   const { loading, error,user } = useSelector((state) => state.auth)
 
   const onSubmit = (data) => {
-    dispatch(registerUser(data))
-      
-  }
-  useEffect(() => {
-    if (!loading && !error && user) {
-      navigate('/login')
+    if (emailAvailable === false) {
+      return; 
     }
-  }, [user, loading, error, navigate])
+  
+    dispatch(registerUser(data));
+  };
+  
+  useEffect(() => {
+    if (!loading && !error && user?.email) {
+      navigate('/verify-otp', { state: { email: user.email } });
+    }
+  }, [user, loading, error, navigate]);
+  
+  const [emailAvailable, setEmailAvailable] = useState(null) 
+  const handleEmailBlur = async (e) => {
+    const email = e.target.value
+    if (!email) return
+  
+    try {
+      const res = await axiosInstance.get(`/check-email?email=${email}`)
+      setEmailAvailable(!res.data.exists)
+    } catch (err) {
+      console.error('Email check failed:', err)
+      setEmailAvailable(null)
+    }
+  }
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -62,11 +82,23 @@ function Signup() {
         </div>
 
         {/* Email */}
+        
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" {...register('email')} />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          <Input
+            id="email"
+            type="email"
+            {...register('email')}
+            onBlur={handleEmailBlur}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email.message}</p>
+          )}
+          {emailAvailable === false && (
+            <p className="text-red-500 text-sm">Email already exists</p>
+          )}
         </div>
+
 
         {/* Password */}
         <div className="space-y-2">
@@ -104,9 +136,10 @@ function Signup() {
         {/* Error */}
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full" disabled={loading || emailAvailable === false}>
           {loading ? 'Signing up...' : 'Sign Up'}
         </Button>
+
         <div className="text-center">
           <p className="text-sm">
             Already have an account?{' '}
