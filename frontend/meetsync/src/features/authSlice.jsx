@@ -1,15 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axiosInstance from '../api/axiosInstance'
+import { useNavigate } from 'react-router-dom';
 
 //import Cookies from 'js-cookie'
 
-// Async thunks
+
 export const loginUser = createAsyncThunk(
   "auth/login",
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const res = await axiosInstance.post(
-        '/login',
+        '/users/login',
         { email, password },
         //{ withCredentials: true }
       );
@@ -18,20 +19,17 @@ export const loginUser = createAsyncThunk(
       if (err.response?.status === 401) {
         throw new Error("Invalid email or password");
       }
-      throw new Error(err.response?.data?.message || "Login failed");
+      return rejectWithValue(err.response?.data?.message || "Login failed");
     }
   }
 );
-
-  
-  
 
   export const registerUser = createAsyncThunk(
     'auth/registerUser',
     async (userData, { rejectWithValue }) => {
       try {
         console.log("Sending data to /register", userData);
-        const res = await axiosInstance.post('/register', userData);
+        const res = await axiosInstance.post('/users/register', userData);
         console.log("Register response", res.data);
         return { message: res.data.message, email: userData.email };
       } catch (err) {
@@ -43,12 +41,11 @@ export const loginUser = createAsyncThunk(
     }
   );
   
-  
   export const verifyOtp = createAsyncThunk(
     'auth/verifyOtp',
     async ({ email, otp }, { rejectWithValue }) => {
       try {
-        const res = await axiosInstance.post('/verify-otp', { email, otp });
+        const res = await axiosInstance.post('/users/verify-otp', { email, otp });
         return res.data.user;
       } catch (err) {
         return rejectWithValue({
@@ -58,12 +55,11 @@ export const loginUser = createAsyncThunk(
     }
   );
   
-
   export const fetchUserDetails = createAsyncThunk(
     "auth/fetchUserDetails",
     async (_, { rejectWithValue }) => {
       try {
-        const response = await axiosInstance.get('/me');
+        const response = await axiosInstance.get('/users/me');
         console.log(response.data.user);
         return response.data.user;
       } catch (error) {
@@ -81,7 +77,7 @@ export const loginUser = createAsyncThunk(
     "auth/logoutUser",
     async (_, { rejectWithValue }) => {
       try {
-        await axiosInstance.post('/logout');
+        await axiosInstance.post('/users/logout');
         return;
       } catch (error) {
         return rejectWithValue(
@@ -95,7 +91,7 @@ export const loginUser = createAsyncThunk(
     'auth/resendOtp',
     async ({ email }, { rejectWithValue }) => {
       try {
-        const res = await axiosInstance.post('/resend-otp', { email });
+        const res = await axiosInstance.post('/users/resend-otp', { email });
         return res.data.message;
       } catch (err) {
         return rejectWithValue({
@@ -105,12 +101,12 @@ export const loginUser = createAsyncThunk(
     }
   );
 
-  // Forgot Password
+ 
 export const forgotPassword = createAsyncThunk(
   "auth/forgotPassword",
   async (email, thunkAPI) => {
     try {
-      const res = await axiosInstance.post("/forgot-password", { email });
+      const res = await axiosInstance.post("/users/forgot-password", { email });
       console.log(res.data.message);
     } catch (err) {
       console.log(err.response?.data?.message || "Something went wrong");
@@ -119,16 +115,32 @@ export const forgotPassword = createAsyncThunk(
   }
 );
 
-// Reset Password
+
 export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
   async (formData, thunkAPI) => {
     try {
-      const res = await axiosInstance.post("/reset-password", formData);
+      const res = await axiosInstance.post("/users/reset-password", formData);
       console.log(res.data.message);
     } catch (err) {
       console.log(err.response?.data?.message || "Something went wrong");
       return thunkAPI.rejectWithValue(err.response?.data);
+    }
+  }
+);
+
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put('/users/profile', userData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error updating profile:", error.response?.data);
+      return rejectWithValue(error.response?.data);
     }
   }
 );
@@ -141,21 +153,29 @@ const authSlice = createSlice({
     user: null,
     loading: false,
     error: null,
-    isAuthenticated:false
+    isAuthenticated:false,
+    authChecked: false,
   },
   reducers: {
     
     setUser: (state, action) => {
       state.user = action.payload
+      state.isAuthenticated = !!action.payload;
+      state.authChecked = true;
+    },
+    logout: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.authChecked = true; // ✅ Still mark it as checked
     },
     clearAuthError: (state) => {
       state.error = null;
-    }
+    },
     
   },
   extraReducers: (builder) => {
     builder
-      // Login
+      
       .addCase(loginUser.pending, (state) => {
         state.loading = true
         state.error = null
@@ -168,18 +188,18 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
 
-      // Signup
+      
       .addCase(registerUser.pending, (state) => {
         state.loading = true
         state.error = null
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false
-        state.user = { email: action.payload.email } // <-- Set just the email
-        state.isAuthenticated = false // not yet authenticated until OTP
+        state.user = { email: action.payload.email } 
+        state.isAuthenticated = false 
       })
       
       .addCase(registerUser.rejected, (state, action) => {
@@ -221,7 +241,7 @@ const authSlice = createSlice({
       .addCase(verifyOtp.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
-        state.isAuthenticated = true;
+        state.isAuthenticated = false;
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.loading = false;
@@ -237,9 +257,17 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload.message;
       })
-      
-      
-
+      .addCase(updateUserProfile.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;  
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload; 
+      });
   },
 })
 

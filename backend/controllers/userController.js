@@ -1,9 +1,6 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import STATUS from '../utils/constants.js';
-import {generateOTP} from '../utils/otp.js';
-import sendOTPEmail from '../utils/sendMail.js';
-import {saveOTP}  from '../utils/otpStore.js';
-import otpTemplate from '../utils/emailTemplates/otpTemplate.js';
+import { sendTokensAsCookies } from '../utils/tokenHandler.js';
 
 
 import {
@@ -16,37 +13,14 @@ import {
   resendOtpService,
   forgotPasswordService,
   resetPasswordService,
-  verifyOtpAndRegisterService
+  verifyOtpAndRegisterService,
+  updateUserProfileService
 } from '../services/userService.js';
 import registerValidation from '../validation/userValidation.js';
 import CustomError from '../utils/customError.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 
-// Helper: Send Tokens as Cookies
-const sendTokensAsCookies = (res, accessToken, refreshToken) => {
-  const isProd = process.env.NODE_ENV === 'production';
 
-res.cookie("accessToken", accessToken, {
-  httpOnly: true,
-  secure: isProd, // must be true if using SameSite: 'None'
-  sameSite: isProd ? 'None' : 'Lax', // fallback to 'Lax' in development
-  maxAge: 15 * 60 * 1000,
-  path:'/'
-});
-
-res.cookie("refreshToken", refreshToken, {
-  httpOnly: true,
-  secure: isProd,
-  sameSite: isProd ? 'None' : 'Lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path:'/'
-});
-
-};
-
-
-
-// ✅ Controller: Register User
 export const registerUser = asyncHandler(async (req, res) => {
   const { error } = registerValidation.validate(req.body);
   if (error) throw new CustomError(error.details[0].message, 400);
@@ -63,7 +37,6 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 
 
-// ✅ Login
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await userLoginServices(email, password);
@@ -80,7 +53,8 @@ export const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
-// ✅ Refresh Access Token
+
+
 export const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken } = req.cookies;
   if (!refreshToken) throw new CustomError("Refresh token missing", 401);
@@ -106,7 +80,8 @@ export const refreshToken = asyncHandler(async (req, res) => {
 
 });
 
-// ✅ Get Logged-In User
+
+
 export const getLoggedInUser = asyncHandler(async (req, res) => {
   const user = await getUserDetails(req.user._id);
   if (!user) throw new CustomError("User not found", 404);
@@ -114,7 +89,8 @@ export const getLoggedInUser = asyncHandler(async (req, res) => {
   res.status(200).json({ user });
 });
 
-// ✅ Logout
+
+
 export const logoutUser = asyncHandler(async (req, res) => {
   await logoutUserService(); 
 
@@ -162,10 +138,20 @@ export const checkEmailExists = asyncHandler(async (req, res) => {
     throw new CustomError("Email is required", 400);
   }
 
-  const exists = await checkEmailExistsService(email);
+  const user = await checkEmailExistsService(email);
 
-  res.status(200).json({ exists });
+  if (!user) {
+    return res.status(404).json({ message: "User not found", exists: false });
+  }
+
+  // Prevent Google user from resetting password
+  if (user.isGoogleUser) {
+    return res.status(400).json({ message: "Google user can't reset password", isGoogleUser: true });
+  }
+
+  res.status(200).json({ exists: true, isGoogleUser: false });
 });
+
 
 
 
@@ -178,7 +164,8 @@ export const resendOtpController = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'OTP resent successfully' });
 });
 
-// 🔐 Forgot Password - Send OTP
+
+
 export const forgotPasswordController = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) throw new CustomError('Email is required', 400);
@@ -190,7 +177,8 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
   });
 });
 
-// 🔒 Reset Password
+
+
 export const resetPasswordController = asyncHandler(async (req, res) => {
   const { email, otp, newPassword } = req.body;
   if (!email || !otp || !newPassword) throw new CustomError('All fields are required', 400);
@@ -199,3 +187,34 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: 'Password reset successful. You can now log in.' });
 });
+
+
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, timezone } = req.body;
+    console.log("Uploaded File Info:", req.file); // Check the file data
+    console.log("Form Data:", req.body); // Log the rest of the form data
+
+    const profilePic = req.file?.path; // The path to the uploaded file
+
+    const updatedData = {
+      ...(name && { name }),
+      ...(timezone && { timezone }),
+      ...(profilePic && { profilePic }),
+    };
+
+    const updatedUser = await updateUserProfileService(userId, updatedData);
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating profile:", error); // Log error details
+    res.status(500).json({ message: "Error updating profile", error: error.message });
+  }
+};
+

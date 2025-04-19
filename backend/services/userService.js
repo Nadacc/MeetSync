@@ -3,11 +3,11 @@ import bcrypt from 'bcryptjs';
 import CustomError from '../utils/customError.js';
 import { generateAccessToken, verifyToken } from '../utils/jwt.js';
 import { generateOTP } from '../utils/otp.js';
-import { saveOTP,verifyAndConsumeOTP } from '../utils/otpStore.js';
+import { saveOTP,verifyAndConsumeOTP,getOtpData } from '../utils/otpStore.js';
 import sendOTPEmail from '../utils/sendMail.js';
 import otpTemplate from '../utils/emailTemplates/otpTemplate.js';
 
-// Registration
+
 export const registerUserService = async ({ name, email, password, timezone }) => {
   const userExists = await checkEmailExistsService(email);
   if (userExists) {
@@ -16,10 +16,8 @@ export const registerUserService = async ({ name, email, password, timezone }) =
 
   const otp = generateOTP();
 
-  // Save OTP and temporary user data
   saveOTP(email, otp, { name, email, password, timezone });
 
-  // Send OTP to user's email
   await sendOTPEmail({
     to: email,
     subject: 'Verify your email - OTP Code',
@@ -46,7 +44,7 @@ export const userLoginServices = async (email, password) => {
   if (!user) {
     throw new CustomError("Invalid email or password", 401);
   }
-
+  
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new CustomError("Invalid email or password", 401);
@@ -91,8 +89,9 @@ export const logoutUserService = () => {
 
 export const checkEmailExistsService = async (email) => {
   const user = await User.findOne({ email });
-  return !!user; // returns true if user exists, false otherwise
+  return user; 
 };
+
 
 export const verifyOtpAndRegisterService = async (email, otp) => {
   const { valid, userData, reason } = verifyAndConsumeOTP(email, otp);
@@ -106,8 +105,15 @@ export const verifyOtpAndRegisterService = async (email, otp) => {
 
 
 export const resendOtpService = async (email) => {
+  const existingOtpData = getOtpData(email);
+
+  if (!existingOtpData || !existingOtpData.userData) {
+    throw new CustomError("No pending registration found. Please register again.", 400);
+  }
+
   const otp = generateOTP();
-  saveOTP(email, otp); // no userData needed here
+  saveOTP(email, otp, existingOtpData.userData);
+
   await sendOTPEmail({
     to: email,
     subject: 'Resend OTP - Verification Code',
@@ -115,13 +121,17 @@ export const resendOtpService = async (email) => {
   });
 };
 
-// 🔐 Forgot Password Service
+
+
 export const forgotPasswordService = async (email) => {
+  
   const user = await User.findOne({ email });
   if (!user) throw new CustomError("No account with this email", 404);
-
+  if (user.isGoogleUser) {
+    throw new CustomError("This account was registered via Google. Please login with Google.", 400);
+  }
   const otp = generateOTP();
-  saveOTP(email, otp); // just OTP, no userData
+  saveOTP(email, otp); 
   await sendOTPEmail({
     to: email,
     subject: 'Password Reset - OTP Code',
@@ -129,7 +139,7 @@ export const forgotPasswordService = async (email) => {
   });
 };
 
-// 🔒 Reset Password Service
+
 export const resetPasswordService = async (email, otp, newPassword) => {
   const { valid, reason } = verifyAndConsumeOTP(email, otp);
   if (!valid) throw new CustomError(reason, 400);
@@ -140,4 +150,15 @@ export const resetPasswordService = async (email, otp, newPassword) => {
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   user.password = hashedPassword;
   await user.save();
+};
+
+
+
+export const updateUserProfileService = async (userId, updateData) => {
+  const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+    new: true,
+    runValidators: true,
+  });
+
+  return updatedUser;
 };

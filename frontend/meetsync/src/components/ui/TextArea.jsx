@@ -1,15 +1,14 @@
-import React from "react";
-
-const TextArea = ({ value, onChange, placeholder, className = "", rows = 4 }) => {
+// components/ui/Textarea.js
+const Textarea = ({ value, onChange, placeholder, ...rest }) => {
   return (
     <textarea
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      rows={rows}
-      className={`px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${className}`}
+      className="w-full p-2 border border-gray-300 rounded"
+      {...rest}
     />
   );
 };
 
-export default TextArea;
+export default Textarea;

@@ -7,6 +7,8 @@ import Label from '../../components/ui/Label'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../../api/axiosInstance";
+import { useState,useEffect } from "react";
 
 const schema = yup.object({
   email: yup.string().email().required("Email is required"),
@@ -15,26 +17,65 @@ const schema = yup.object({
 const ForgotPassword = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const[alertData,setAlertData] = useState(null)
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) });
 
-  const onSubmit = (data) => {
-    dispatch(forgotPassword(data.email))
-      .unwrap()
-      .then(() => {
-        navigate("/reset-password", { state: { email: data.email } });
-      })
-      .catch((err) => {
-        console.error("Error sending OTP:", err);
+
+
+  useEffect(() => {
+    console.log("Alert Data updated:", alertData);
+  }, [alertData]);
+  
+
+
+  const onSubmit = async (data) => {
+    try {
+      const response = await axiosInstance.get("/users/check-email", {
+        params: { email: data.email },
       });
+      console.log("API Response:", response.data);
+      const { exists, isGoogleUser } = response.data;
+  
+      if (!exists) {
+        setAlertData({ message: "Email not found", type: "error" });
+        return;
+      }
+      if (isGoogleUser) {
+        setAlertData({ message: "This email is registered via Google. Password reset not allowed.", type: "warning" });
+        return;
+      }
+      console.log("Alert Data:", alertData);
+
+  
+      dispatch(forgotPassword(data.email))
+        .unwrap()
+        .then(() => {
+          navigate("/reset-password", { state: { email: data.email } });
+        })
+        .catch((err) => {
+          console.error("Error sending OTP:", err);
+        });
+    } catch (error) {
+      console.error("Error checking email:", error);
+      alert(error.response?.data?.message || "Something went wrong");
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      {alertData && (
+        <div className="mb-4" style={{ zIndex: 9999, backgroundColor: 'red' }}>
+          <AlertBox
+            {...alertData}
+            onClose={() => setAlertData(null)}
+          />
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md space-y-6"
@@ -57,7 +98,7 @@ const ForgotPassword = () => {
         </div>
 
         {/* Submit */}
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full cursor-pointer">
           Send OTP
         </Button>
       </form>

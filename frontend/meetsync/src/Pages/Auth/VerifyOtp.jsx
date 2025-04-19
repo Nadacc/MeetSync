@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux'
-import { verifyOtp, registerUser } from '../../features/authSlice'
+import { verifyOtp, registerUser ,resendOtp} from '../../features/authSlice'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useEffect, useState } from 'react'
@@ -51,7 +51,7 @@ function VerifyOtp() {
 
     const result = await dispatch(resendOtp({ email }))
 
-    if (registerUser.fulfilled.match(result)) {
+    if (resendOtp.fulfilled.match(result)) {
       
       setCounter(300)
       setResendTimer(60)
@@ -83,12 +83,12 @@ function VerifyOtp() {
           )}
         </div>
 
-        <Button type="submit" className="w-full">Verify OTP</Button>
+        <Button type="submit" className="w-full cursor-pointer">Verify OTP</Button>
       </form>
 
       <div className="text-center mt-4">
         <button
-          className={`text-blue-600 hover:underline disabled:opacity-50`}
+          className={`text-blue-600 hover:underline disabled:opacity-50 cursor-pointer`}
           onClick={handleResendOtp}
           disabled={resendTimer > 0}
         >

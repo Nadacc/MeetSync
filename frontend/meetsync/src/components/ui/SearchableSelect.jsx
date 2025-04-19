@@ -7,7 +7,7 @@ function SearchableSelect({
   options = [],
   error,
   onChange,
-  onBlur, // ✅ add onBlur prop
+  onBlur, 
   value,
   placeholder = 'Select an option...',
   isDisabled = false,
@@ -26,7 +26,7 @@ function SearchableSelect({
         value={value}
         onChange={(val) => {
           onChange(val)
-          onBlur() // ✅ manually call onBlur to set touched
+          onBlur() 
         }}
         isDisabled={isDisabled}
         classNames={{

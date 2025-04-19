@@ -9,6 +9,14 @@ const axiosInstance = axios.create({
   },
 });
 
+export const googleAuth = (code) => axiosInstance.get(`/users/google?code=${code}`,{
+  withCredentials:true,
+});
+
+
+
+
+
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -40,7 +48,7 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axiosInstance.post("/refreshtoken"); 
+        await axiosInstance.post("/users/refreshtoken"); 
         processQueue(null);
         isRefreshing = false;
       

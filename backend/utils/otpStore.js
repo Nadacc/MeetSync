@@ -27,3 +27,10 @@ export const verifyAndConsumeOTP = (email, inputOtp) => {
   otpStore.delete(email);
   return { valid: true, userData };
 };
+
+
+export const getOtpData = (email) => {
+  const record = otpStore.get(email);
+  if (!record) return null;
+  return { otp: record.otp, userData: record.userData };
+};

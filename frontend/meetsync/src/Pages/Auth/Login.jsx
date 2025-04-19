@@ -7,8 +7,10 @@ import { DevTool } from '@hookform/devtools'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser } from '../../features/authSlice'
 import { useNavigate } from 'react-router-dom'
-import { loginSchema } from '../../Validation/authSchema'
+import { loginSchema } from '../../utils/Validation/authSchema'
 import { yupResolver } from '@hookform/resolvers/yup'
+import GoogleLogin from './GoogleLogin'
+import loginImage from '../../assets/Login-amico.png'
 
 function Login() {
   const form = useForm({
@@ -34,6 +36,10 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="flex flex-col md:flex-row items-center justify-center bg-white rounded-2xl shadow-md p-8 max-w-4xl w-full space-y-6 md:space-y-0 md:space-x-10">
+      <div className="hidden md:block w-full md:w-1/2">
+      <img src={loginImage} alt="Login illustration" className="w-full h-auto object-contain" />
+    </div>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md space-y-6"
@@ -82,13 +88,23 @@ function Login() {
           </p>
         </div>
 
-        {/* Error from API */}
+        
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        {/* Submit */}
-        <Button type="submit" className="w-full" disabled={loading}>
+        
+        <Button type="submit" className="w-full cursor-pointer" disabled={loading}>
           {loading ? 'Logging in...' : 'Login'}
         </Button>
+
+
+        <div className="flex items-center gap-4 my-4">
+          <div className="flex-grow h-px bg-gray-300"></div>
+          <p className="text-gray-500 text-sm">or</p>
+          <div className="flex-grow h-px bg-gray-300"></div>
+        </div>
+
+
+        <GoogleLogin/>
 
 
         <div className="text-center">
@@ -103,7 +119,7 @@ function Login() {
           </p>
         </div>
       </form>
-
+      </div>
       <DevTool control={control} />
     </div>
   )
