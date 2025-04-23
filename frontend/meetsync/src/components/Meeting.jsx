@@ -10,17 +10,22 @@ const Meeting = () => {
   const { created, invited, loading, error } = useSelector((state) => state.meeting);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const userTimezone = useSelector((state) => state.auth.user?.timezone);
+  const [formMode, setFormMode] = useState(null);
+    const [editingMeeting, setEditingMeeting] = useState(null);
+
 
   useEffect(() => {
     dispatch(fetchMeetings());
   }, [dispatch]);
 
-  // Filter online meetings only
   const onlineCreated = created.filter((meeting) => meeting.type === 'online');
   const onlineInvited = invited.filter((meeting) => meeting.type === 'online');
 
   const closeModal = () => setSelectedMeeting(null);
-
+  const handleEdit = (meeting) => {
+    setFormMode("edit");
+    setEditingMeeting(meeting);
+  };
   return (
     <div className="w-full">
       <Header title="Online Meetings" />
@@ -48,7 +53,7 @@ const Meeting = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {onlineInvited.length === 0 ? (
-            <p>You haven’t been invited to any online meetings yet.</p>
+            <p>You haven't been invited to any online meetings yet.</p>
           ) : (
             onlineInvited.map((meeting) => (
               <MeetingCard
@@ -68,6 +73,7 @@ const Meeting = () => {
           onClose={closeModal} 
           isMyMeeting={onlineCreated.some((m) => m._id === selectedMeeting._id)} 
           userTimezone={userTimezone}
+          onEdit={handleEdit}
         />
       )}
     </div>

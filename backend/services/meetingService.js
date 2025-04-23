@@ -58,15 +58,23 @@ export const getUserMeetingsService = async (userId) => {
     }
 };
 
+
+
 export const updateMeetingService = async (id, data, userId) => {
-    const meeting = await Meeting.findById(id);
-    if (!meeting) throw new Error("Meeting not found");
-    if (!meeting.organizer.equals(userId)) throw new Error("Unauthorized");
-  
-    Object.assign(meeting, data);
-    await meeting.save();
-    return meeting;
-  };
+  const meeting = await Meeting.findById(id);
+  if (!meeting) throw new Error("Meeting not found");
+
+  if (data.attendees && Array.isArray(data.attendees)) {
+    const users = await User.find({ email: { $in: data.attendees } });
+    const userIds = users.map((user) => user._id);
+    data.attendees = userIds;
+  }
+
+  Object.assign(meeting, data);
+  const updatedMeeting = await meeting.save();
+  return updatedMeeting;
+};
+
   
   export const deleteMeetingService = async (id, userId) => {
     const meeting = await Meeting.findById(id);

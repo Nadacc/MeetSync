@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import Header from './ui/Header';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchMeetings } from '../features/meetingSlice';
-import MeetingCard from './MeetingCard';
-import MeetingModal from './MeetingModal';
-import { DateTime } from 'luxon';
+import React, { useEffect, useState } from "react";
+import Header from "./ui/Header";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMeetings } from "../features/meetingSlice";
+import MeetingCard from "./MeetingCard";
+import MeetingModal from "./MeetingModal";
+import { DateTime } from "luxon";
+import { Tabs, Tab } from '../components/ui/Tabs'
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -12,9 +13,10 @@ const Dashboard = () => {
   const userTimezone = useSelector((state) => state.auth.user?.timezone);
 
   const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [formMode, setFormMode] = useState(null); // "edit" or null
+  const [selectedDate, setSelectedDate] = useState("");
+  const [formMode, setFormMode] = useState(null);
   const [editingMeeting, setEditingMeeting] = useState(null);
+
 
   useEffect(() => {
     dispatch(fetchMeetings());
@@ -28,12 +30,32 @@ const Dashboard = () => {
     return meetingDate === selectedDate;
   };
 
-  const filteredCreated = created.filter((m) => isSameDay(m.startTime));
-  const filteredInvited = invited.filter((m) => isSameDay(m.startTime));
+  const getCategory = (isoString) => {
+    const now = DateTime.local().setZone(userTimezone);
+    const date = DateTime.fromISO(isoString, { zone: userTimezone });
+
+    if (date.hasSame(now, "day")) return "today";
+    if (date < now.startOf("day")) return "past";
+    return "upcoming";
+  };
+
+  const filterMeetings = (meetings) => {
+    const base = meetings.filter((m) => isSameDay(m.startTime));
+
+    return {
+      all: base,
+      today: base.filter((m) => getCategory(m.startTime) === "today"),
+      upcoming: base.filter((m) => getCategory(m.startTime) === "upcoming"),
+      past: base.filter((m) => getCategory(m.startTime) === "past"),
+    };
+  };
+
+  const categorizedCreated = filterMeetings(created);
+  const categorizedInvited = filterMeetings(invited);
 
   const handleEdit = (meeting) => {
-    setFormMode('edit');
-    setEditingMeeting(meeting); 
+    setFormMode("edit");
+    setEditingMeeting(meeting);
   };
 
   return (
@@ -41,8 +63,7 @@ const Dashboard = () => {
       <Header title="Dashboard" />
 
       <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Date Picker */}
-        <div className="mb-8">
+        <div className="mb-10">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Filter by date
           </label>
@@ -54,60 +75,67 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* My Meetings */}
-        <section>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">My Meetings</h2>
-          {loading && <p className="text-gray-500">Loading...</p>}
-          {error && <p className="text-red-600">Error: {error}</p>}
+        
+        <Tabs>
+          {["all", "today", "upcoming", "past"].map((type) => (
+            <Tab key={type} label={type}>
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">My Meetings</h2>
+                {/* {loading && <p className="text-gray-500">Loading...</p>} */}
+                {error && <p className="text-red-600">Error: {error}</p>}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {categorizedCreated[type].length === 0 ? (
+                    <div className="col-span-full text-gray-500">
+                      No {type} meetings found.
+                    </div>
+                  ) : (
+                    categorizedCreated[type].map((meeting) => (
+                      <MeetingCard
+                        key={meeting._id}
+                        meeting={meeting}
+                        onClick={setSelectedMeeting}
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredCreated.length === 0 ? (
-              <div className="col-span-full text-gray-500">No meetings found for the selected date.</div>
-            ) : (
-              filteredCreated.map((meeting) => (
-                <MeetingCard
-                  key={meeting._id}
-                  meeting={meeting}
-                  onClick={setSelectedMeeting}
-                />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Invited Meetings */}
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Invited Meetings</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredInvited.length === 0 ? (
-              <div className="col-span-full text-gray-500">No invited meetings found for the selected date.</div>
-            ) : (
-              filteredInvited.map((meeting) => (
-                <MeetingCard
-                  key={meeting._id}
-                  meeting={meeting}
-                  showOrganizer
-                  onClick={setSelectedMeeting}
-                />
-              ))
-            )}
-          </div>
-        </section>
+              <section>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Invited Meetings</h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {categorizedInvited[type].length === 0 ? (
+                    <div className="col-span-full text-gray-500">
+                      No {type} invited meetings found.
+                    </div>
+                  ) : (
+                    categorizedInvited[type].map((meeting) => (
+                      <MeetingCard
+                        key={meeting._id}
+                        meeting={meeting}
+                        showOrganizer
+                        onClick={setSelectedMeeting}
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            </Tab>
+          ))}
+        </Tabs>
       </div>
 
-      {/* Meeting Modal */}
+      
       {selectedMeeting && (
         <MeetingModal
           meeting={selectedMeeting}
           onClose={closeModal}
           isMyMeeting={created.some((m) => m._id === selectedMeeting._id)}
           userTimezone={userTimezone}
-          onEdit={handleEdit} 
+          onEdit={handleEdit}
         />
       )}
     </div>
   );
 };
-
 
 export default Dashboard;

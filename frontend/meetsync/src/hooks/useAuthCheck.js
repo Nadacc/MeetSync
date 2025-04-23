@@ -8,12 +8,14 @@ const useAuthCheck = () => {
     const dispatch = useDispatch();
   
     useLayoutEffect(() => {
+      console.log("Checking auth...");
       const checkAuth = async () => {
         try {
           const res = await axiosInstance.get('/users/me');
           dispatch(setUser(res.data.user));  
         } catch (error) {
           dispatch(logout());  
+          console.log("Error while checking auth:", error);
         } finally {
           setAuthChecked(true);  
         }

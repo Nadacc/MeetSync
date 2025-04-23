@@ -6,11 +6,11 @@ export const createMeeting = createAsyncThunk(
     'meeting/create',
     async (meetingData, { rejectWithValue }) => {
       try {
-        console.log("Creating meeting with data:", meetingData); // 👈 Check what is being sent
+        console.log("Creating meeting with data:", meetingData); 
         const res = await axiosInstance.post('/meetings/create', meetingData);
         return res.data.meeting;
       } catch (err) {
-        console.error("Create meeting error:", err); // 👈 More helpful logging
+        console.error("Create meeting error:", err);
         return rejectWithValue(err.response?.data?.message || "Unknown error");
       }
     }
@@ -31,9 +31,9 @@ export const createMeeting = createAsyncThunk(
 
   export const updateMeeting = createAsyncThunk(
     'meeting/update',
-    async ({ id, data }, { rejectWithValue }) => {
+    async ({ id, meeting }, { rejectWithValue }) => {
       try {
-        const res = await axiosInstance.put(`/meetings/update/${id}`, data);
+        const res = await axiosInstance.patch(`/meetings/update/${id}`, meeting);
         return res.data.meeting;
       } catch (err) {
         return rejectWithValue(err.response?.data?.message || "Update failed");
@@ -88,7 +88,15 @@ const meetingSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(updateMeeting.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateMeeting.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(updateMeeting.fulfilled, (state, action) => {
+        state.loading = false;
         const index = state.created.findIndex(m => m._id === action.payload._id);
         if (index !== -1) state.created[index] = action.payload;
       })

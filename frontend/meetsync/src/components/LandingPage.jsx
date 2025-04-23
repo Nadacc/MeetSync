@@ -20,14 +20,14 @@ function LandingPage() {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
           <Button
-            className="px-6 py-3 text-lg font-medium"
+            className="px-6 py-3 text-lg font-medium text-white"
             onClick={() => navigate('/register')}
           >
             Get Started
           </Button>
           <Button
             variant="outline"
-            className="px-6 py-3 text-lg font-medium"
+            className="px-6 py-3 text-lg font-medium text-white"
             onClick={() => navigate('/login')}
           >
             Login
@@ -50,7 +50,7 @@ function LandingPage() {
             <div>
               <h3 className="text-lg font-semibold text-gray-800">Real-Time Meetings</h3>
               <p className="text-gray-600 text-sm">
-                Join video meetings instantly with built-in WebRTC support.
+                Join video meetings instantly .
               </p>
             </div>
           </div>

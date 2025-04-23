@@ -9,19 +9,18 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { to: "/create-meeting", icon: PlusCircle, label: "Create Meeting" },
-  { to: "/dashboard", icon: Home, label: "Home" },
-  { to: "/meetings", icon: Video, label: "Video Meeting" },
-  { to: "/calender", icon: CalendarDays, label: "Calendar" }
+  { to: "/app/create-meeting", icon: PlusCircle, label: "Create Meeting" },
+  { to: "/app/dashboard", icon: Home, label: "Home" },
+  { to: "/app/meetings", icon: Video, label: "Video Meeting" },
+  { to: "/app/calender", icon: CalendarDays, label: "Calendar" }
 ];
 
 const Navbar = () => {
   const location = useLocation();
 
   return (
-    <aside className="group/sidebar w-16 hover:w-56 transition-all duration-300 min-h-screen bg-white shadow-xl flex flex-col items-start py-4 overflow-hidden relative">
+    <aside className="group/sidebar fixed top-0 left-0 w-16 hover:w-56 transition-all duration-300 h-screen bg-white shadow-xl flex flex-col items-start py-4 overflow-hidden z-50">
       
-      {/* Logo Section */}
       <div className="flex items-center w-full px-4 pb-6">
         <img
           src="meetlogo.png"
@@ -33,7 +32,6 @@ const Navbar = () => {
         </span>
       </div>
 
-      {/* Nav Items */}
       <div className="flex flex-col gap-3 w-full">
         {navItems.map(({ to, icon: Icon, label }) => {
           const isActive = location.pathname === to;
@@ -46,7 +44,6 @@ const Navbar = () => {
                 hover:bg-blue-50 hover:text-blue-600 group
                 ${isActive ? ' text-blue-600' : ''}`}
             >
-              {/* Active tab indicator */}
               <span
                 className={`absolute left-0 top-2.5 bottom-2.5 w-1 rounded-r-full bg-blue-500 transition-opacity duration-300 ${
                   isActive ? "opacity-100" : "opacity-0"
@@ -62,7 +59,7 @@ const Navbar = () => {
               <span className="text-gray-800 text-base whitespace-nowrap overflow-hidden opacity-0 group-hover/sidebar:opacity-100 transition-all duration-300">
                 {label}
               </span>
-              {/* Tooltip */}
+              
               <span className="absolute left-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-2 py-1 rounded-md opacity-0 group-hover/sidebar:hidden group-hover:opacity-100 transition-all duration-200 whitespace-nowrap z-10 pointer-events-none">
                 {label}
               </span>

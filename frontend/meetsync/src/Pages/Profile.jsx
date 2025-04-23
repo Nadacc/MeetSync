@@ -9,14 +9,14 @@ import Label from "../components/ui/Label";
 import SearchableSelect from "../components/ui/SearchableSelect";
 import { timezones } from "../utils/timezones";
 import { updateUserProfile } from "../features/authSlice";
-import { FaUser, FaEdit } from "react-icons/fa"; // Importing icons
+import { FaUser, FaEdit } from "react-icons/fa"; 
 
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
   timezone: yup.string().required("Timezone is required"),
   profilePic: yup.mixed().test('fileSize', 'File is too large', (value) => {
     if (value && value[0]) {
-      return value[0].size <= 5000000; // 5MB
+      return value[0].size <= 5000000; 
     }
     return true;
   }),
@@ -32,7 +32,7 @@ function Profile() {
         handleSubmit,
         formState: { errors },
         control,
-        setValue, // For dynamically setting the file value
+        setValue, 
     } = useForm({
         defaultValues: {
             name: user?.name || "",
@@ -42,29 +42,28 @@ function Profile() {
     });
 
     const handleFileChange = (event) => {
-        const file = event.target.files[0]; // Get the first file from the FileList
-        console.log("File selected:", file); // Log the file to ensure it's captured
+        const file = event.target.files[0]; 
+        console.log("File selected:", file); 
     
         if (file) {
-            setSelectedProfilePic(URL.createObjectURL(file)); // For preview, if needed
-            setValue("profilePic", file); // Set the single file instead of FileList
+            setSelectedProfilePic(URL.createObjectURL(file)); 
+            setValue("profilePic", file); 
         }
     };
     
     const onSubmit = (data) => {
-        console.log(data);  // Log all form data
+        console.log(data);  
     
-        // Now access the file as a single file
         const profilePicFile = data.profilePic;
-        console.log("File selected:", profilePicFile);  // Ensure the file is selected
+        console.log("File selected:", profilePicFile);  
     
         const formData = new FormData();
         formData.append("name", data.name);
         formData.append("timezone", data.timezone);
     
-        // Only append the profilePic if a file is selected
+       
         if (profilePicFile) {
-            formData.append("profilePic", profilePicFile); // Append the single file
+            formData.append("profilePic", profilePicFile); 
         }
     
         console.log("FormData before dispatch:", formData);
@@ -96,7 +95,7 @@ function Profile() {
         <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-xl shadow">
             <h2 className="text-xl font-bold mb-6">Edit Profile</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                {/* Profile Picture Circle */}
+                
                 <div className="flex justify-center mb-6 relative">
                     <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                         {selectedProfilePic ? (
@@ -110,7 +109,7 @@ function Profile() {
                         )}
                     </div>
 
-                    {/* Edit Icon OUTSIDE the circle */}
+                    
                     <label
                         htmlFor="profilePic"
                         className="absolute -bottom-2  bg-gray-600 text-white p-2 rounded-full cursor-pointer shadow"
@@ -119,14 +118,14 @@ function Profile() {
                     </label>
                 </div>
 
-                {/* Hidden file input */}
+                
                 <input
                     type="file"
                     id="profilePic"
                     accept="image/*"
-                    {...register("profilePic")}  // Registering with react-hook-form
+                    {...register("profilePic")}  
                     className="hidden"
-                    onChange={handleFileChange}  // Keep the file change handler
+                    onChange={handleFileChange}  
                 />
 
                 <div>
@@ -158,7 +157,7 @@ function Profile() {
                     )}
                 </div>
 
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" className="text-white">Save Changes</Button>
             </form>
         </div>
     );

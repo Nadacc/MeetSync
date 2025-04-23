@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { Route, Routes } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
-import { ToastContainer } from 'react-toastify';
+
 import 'react-toastify/dist/ReactToastify.css';
 
 import Login from './Pages/Auth/Login';
@@ -25,42 +25,52 @@ import Dashboard from './components/Dashboard';
 import Meeting from './components/Meeting';
 import HomeLayout from './Pages/HomeLayout';
 import Profile from './Pages/Profile';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const dispatch = useDispatch();
   const authChecked = useAuthCheck();
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const loading = useSelector((state) => state.auth.loading);
 
   useEffect(() => {
-    if (authChecked) {
+    if (authChecked && isAuthenticated) {
       dispatch(fetchUserDetails());
     }
-  }, [dispatch, authChecked]);
+  }, [dispatch, authChecked, isAuthenticated]);
+
+  // if (!authChecked || loading) {
+  //   return <Loader />;
+  // }
 
   return (
-    <GoogleOAuthProvider clientId="108553417296-qcesv6mn9pl6kjoska92s77158e64lql.apps.googleusercontent.com">
-      <ToastContainer />
-      <Routes>
-        
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><Signup /></PublicRoute>} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/landing-page" element={<LandingPage />} />
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <>
+        <Toaster position='top-right'/>
+        <Routes>
+          
+          <Route path="/" element={
+            isAuthenticated ? <Navigate to="/app/dashboard" replace /> : <LandingPage />
+          } />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/verify-otp" element={<PublicRoute><VerifyOtp /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
-        
-        <Route path="/" element={<PrivateRoute><HomeLayout /></PrivateRoute>}>
-          <Route index element={<Dashboard />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="create-meeting" element={<CreateMeeting />} />
-          <Route path="meetings" element={<Meeting />} />
-          <Route path="calender" element={<MainCalendar />} />
-          <Route path="profile" element={<Profile/>}/>
-        </Route>
+          
+          <Route path="/app/*" element={<PrivateRoute><HomeLayout /></PrivateRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="create-meeting" element={<CreateMeeting />} />
+            <Route path="meetings" element={<Meeting />} />
+            <Route path="calender" element={<MainCalendar />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
 
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </>
     </GoogleOAuthProvider>
   );
 }

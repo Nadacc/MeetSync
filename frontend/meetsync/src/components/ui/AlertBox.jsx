@@ -14,7 +14,7 @@ const AlertBox = ({ message, type = "error", onClose }) => {
       <span className="text-sm">{message}</span>
       {onClose && (
         <button onClick={onClose} className="ml-4">
-          <X size={18} className="hover:text-black" />
+          <X size={18} className="hover:text-black cursor-pointer" />
         </button>
       )}
     </div>

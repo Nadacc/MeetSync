@@ -9,6 +9,7 @@ import Button from '../../components/ui/Button'
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useState,useEffect } from "react";
+import toast from "react-hot-toast";
 
 const schema = yup.object({
   email: yup.string().email().required("Email is required"),
@@ -41,11 +42,11 @@ const ForgotPassword = () => {
       const { exists, isGoogleUser } = response.data;
   
       if (!exists) {
-        setAlertData({ message: "Email not found", type: "error" });
+        toast.error("Email not found");
         return;
       }
       if (isGoogleUser) {
-        setAlertData({ message: "This email is registered via Google. Password reset not allowed.", type: "warning" });
+        toast.error("This email is registered via Google. Password reset not allowed.");
         return;
       }
       console.log("Alert Data:", alertData);
@@ -54,6 +55,7 @@ const ForgotPassword = () => {
       dispatch(forgotPassword(data.email))
         .unwrap()
         .then(() => {
+          toast.success("OTP sent to your email");
           navigate("/reset-password", { state: { email: data.email } });
         })
         .catch((err) => {
@@ -61,7 +63,7 @@ const ForgotPassword = () => {
         });
     } catch (error) {
       console.error("Error checking email:", error);
-      alert(error.response?.data?.message || "Something went wrong");
+      toast.error(error.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -98,7 +100,7 @@ const ForgotPassword = () => {
         </div>
 
         {/* Submit */}
-        <Button type="submit" className="w-full cursor-pointer">
+        <Button type="submit" className="w-full cursor-pointer text-white">
           Send OTP
         </Button>
       </form>

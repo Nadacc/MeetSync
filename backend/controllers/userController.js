@@ -132,7 +132,7 @@ export const verifyOTPController = asyncHandler(async (req, res) => {
 
 
 export const checkEmailExists = asyncHandler(async (req, res) => {
-  const { email } = req.query;
+  const { email, context } = req.query;
 
   if (!email) {
     throw new CustomError("Email is required", 400);
@@ -144,13 +144,17 @@ export const checkEmailExists = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "User not found", exists: false });
   }
 
-  // Prevent Google user from resetting password
-  if (user.isGoogleUser) {
-    return res.status(400).json({ message: "Google user can't reset password", isGoogleUser: true });
+  // Only block Google users in password reset context
+  if (context === 'password-reset' && user.isGoogleUser) {
+    return res.status(400).json({
+      message: "Google user can't reset password",
+      isGoogleUser: true,
+    });
   }
 
-  res.status(200).json({ exists: true, isGoogleUser: false });
+  res.status(200).json({ exists: true, isGoogleUser: user.isGoogleUser });
 });
+
 
 
 

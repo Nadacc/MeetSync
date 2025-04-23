@@ -11,6 +11,7 @@ import { loginSchema } from '../../utils/Validation/authSchema'
 import { yupResolver } from '@hookform/resolvers/yup'
 import GoogleLogin from './GoogleLogin'
 import loginImage from '../../assets/Login-amico.png'
+import toast from 'react-hot-toast'
 
 function Login() {
   const form = useForm({
@@ -28,6 +29,7 @@ function Login() {
       .unwrap()
       .then(() => {
         navigate('/') 
+        toast.success('login successfull')
       })
       .catch((err) => {
         console.log('Login failed:', err)
@@ -92,7 +94,7 @@ function Login() {
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         
-        <Button type="submit" className="w-full cursor-pointer" disabled={loading}>
+        <Button type="submit" className="w-full cursor-pointer text-white" disabled={loading}>
           {loading ? 'Logging in...' : 'Login'}
         </Button>
 

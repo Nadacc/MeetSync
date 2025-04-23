@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import SearchableSelect from '../../components/ui/SearchableSelect'
 import axiosInstance from '../../api/axiosInstance'
 import { timezones } from '../../utils/timezones'
+import toast from 'react-hot-toast'
 
 const timezoneOptions = timezones.map((tz) => ({
   label: tz,
@@ -39,7 +40,7 @@ function Signup() {
 
     setCheckingEmail(true) 
     try {
-      const res = await axiosInstance.get(`/users/check-email?email=${email}`)
+      const res = await axiosInstance.get(`/users/check-email?email=${email}&context=password-reset`)
       setEmailAvailable(!res.data.exists)
     } catch (err) {
       console.error('Email check failed:', err)
@@ -56,6 +57,7 @@ function Signup() {
 
   useEffect(() => {
     if (!loading && !error && user?.email) {
+     
       navigate('/verify-otp', { state: { email: user.email } })
     }
   }, [user, loading, error, navigate])
@@ -130,7 +132,7 @@ function Signup() {
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <Button type="submit" className="w-full cursor-pointer" disabled={loading || emailAvailable === false}>
+        <Button type="submit" className="w-full cursor-pointer text-white" disabled={loading || emailAvailable === false}>
           {loading ? 'Signing up...' : 'Sign Up'}
         </Button>
 

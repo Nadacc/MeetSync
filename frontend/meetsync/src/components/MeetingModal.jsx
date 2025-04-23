@@ -1,10 +1,11 @@
 import React from 'react';
-import { CalendarDays, MapPin, Video, Clock, Users } from 'lucide-react';
+import { CalendarDays, MapPin, Video, Clock, Users,X } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useDispatch } from 'react-redux';
 import { deleteMeeting } from '../features/meetingSlice';
+import { useNavigate } from 'react-router-dom';
+import Button from './ui/Button';
 
-// Format date with suffix (e.g., 18th April 2025)
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   const day = date.getDate();
@@ -21,7 +22,6 @@ const formatDate = (dateString) => {
   return `${day}${suffix(day)} ${date.toLocaleDateString('en-US', options)}`;
 };
 
-// Format time based on timezone
 const formatTime = (dateString, fromZone, toZone) => {
   const safeFromZone = fromZone || 'UTC';
   const safeToZone = toZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -36,6 +36,7 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
   if (!meeting) return null;
 
   const dispatch = useDispatch();
+  const navigate = useNavigate()
 
   const handleDelete = () => {
     const confirm = window.confirm('Are you sure you want to cancel this meeting?');
@@ -46,9 +47,10 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
         .catch((err) => alert(`Failed to cancel: ${err}`));
     }
   };
-
+  
   const handleEdit = () => {
     onEdit(meeting);
+    navigate('/app/create-meeting',{state:{meeting}})
     onClose();
   };
 
@@ -68,25 +70,19 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white p-6 rounded-xl w-full max-w-lg shadow-lg relative">
-        {/* Close Button */}
-        <button
+        
+        <Button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-black text-lg"
+          className="absolute top-3 right-3  text-black-200 hover:bg-white bg-white text-lg"
         >
-          ×
-        </button>
-
-        {/* Title */}
+          <X size={24} className='cursor-pointer'/>
+        </Button>
         <h2 className="text-2xl font-semibold mb-4">{meeting.title}</h2>
-
-        {/* Meeting Type */}
         <div className="mb-2">
           <span className={`inline-block px-2 py-1 rounded-full text-white text-xs ${meeting.type === 'online' ? 'bg-blue-500' : 'bg-green-500'}`}>
             {meeting.type === 'online' ? 'Online' : 'In-Person'}
           </span>
         </div>
-
-        {/* Attendees */}
         {isMyMeeting && meeting.attendees?.length > 0 && (
           <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
             <Users size={16} className="mt-0.5" />
@@ -95,15 +91,11 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
             </span>
           </div>
         )}
-
-        {/* Agenda */}
         {meeting.agenda && (
           <p className="text-gray-700 mb-3">
             <strong>Agenda:</strong> {meeting.agenda}
           </p>
         )}
-
-        {/* Date, Time, Location */}
         <div className="space-y-2 text-gray-600 text-sm">
           <div className="flex items-center gap-2">
             <CalendarDays size={16} />
@@ -120,38 +112,36 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
           </div>
         </div>
 
-        {/* Organizer */}
+        
         {meeting.organizer?.name && (
           <div className="mt-3 text-sm text-gray-600">
             <strong>Organizer:</strong> {meeting.organizer.name}
           </div>
         )}
 
-        {/* Buttons */}
         {meeting.type === 'online' && (
-          <button
+          <Button
             onClick={handleJoinMeeting}
-            className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
           >
             Join Meeting
-          </button>
+          </Button>
         )}
 
-        {/* Edit & Delete Buttons for My Meetings */}
         {isMyMeeting && (
           <div className="flex gap-3 mt-4">
-            <button
+            <Button
               onClick={handleEdit}
-              className="w-full py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+              className="w-full py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 cursor-pointer"
             >
               Edit
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleDelete}
-              className="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              className="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 cursor-pointer"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         )}
       </div>

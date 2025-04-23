@@ -55,7 +55,6 @@ const ResetPassword = () => {
       >
         <h2 className="text-2xl font-semibold text-center">Reset Password</h2>
 
-        {/* Email */}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -69,7 +68,6 @@ const ResetPassword = () => {
           )}
         </div>
 
-        {/* OTP */}
         <div className="space-y-2">
           <Label htmlFor="otp">OTP</Label>
           <Input id="otp" {...register("otp")} />
@@ -78,7 +76,6 @@ const ResetPassword = () => {
           )}
         </div>
 
-        {/* New Password */}
         <div className="space-y-2">
           <Label htmlFor="newPassword">New Password</Label>
           <Input
@@ -93,8 +90,7 @@ const ResetPassword = () => {
           )}
         </div>
 
-        {/* Submit */}
-        <Button type="submit" className="w-full cursor-pointer">
+        <Button type="submit" className="w-full cursor-pointer text-white">
           Reset Password
         </Button>
       </form>

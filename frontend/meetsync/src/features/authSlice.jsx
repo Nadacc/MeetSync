@@ -154,19 +154,19 @@ const authSlice = createSlice({
     loading: false,
     error: null,
     isAuthenticated:false,
-    authChecked: false,
+    //authChecked: false,
   },
   reducers: {
     
     setUser: (state, action) => {
       state.user = action.payload
       state.isAuthenticated = !!action.payload;
-      state.authChecked = true;
+      //state.authChecked = true;
     },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      state.authChecked = true; // ✅ Still mark it as checked
+      //state.authChecked = true; 
     },
     clearAuthError: (state) => {
       state.error = null;

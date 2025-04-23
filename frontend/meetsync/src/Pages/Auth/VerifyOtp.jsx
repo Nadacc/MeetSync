@@ -3,12 +3,10 @@ import { verifyOtp, registerUser ,resendOtp} from '../../features/authSlice'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useEffect, useState } from 'react'
-
-
-// Import your reusable components
 import Label from '../../components/ui/Label'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
+import toast from 'react-hot-toast'
 
 function VerifyOtp() {
   const dispatch = useDispatch()
@@ -20,14 +18,26 @@ function VerifyOtp() {
   const [counter, setCounter] = useState(300) 
   const [resendTimer, setResendTimer] = useState(60) 
 
-  // Countdown effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCounter((prev) => (prev > 0 ? prev - 1 : 0))
-      setResendTimer((prev) => (prev > 0 ? prev - 1 : 0))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+ 
+useEffect(() => {
+  if (counter <= 0) return
+  const otpTimer = setInterval(() => {
+    setCounter(prev => prev - 1)
+  }, 1000)
+
+  return () => clearInterval(otpTimer)
+}, [counter])
+
+
+useEffect(() => {
+  if (resendTimer <= 0) return
+  const resendCooldown = setInterval(() => {
+    setResendTimer(prev => prev - 1)
+  }, 1000)
+
+  return () => clearInterval(resendCooldown)
+}, [resendTimer])
+
 
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
@@ -39,7 +49,7 @@ function VerifyOtp() {
     const result = await dispatch(verifyOtp({ email, otp: data.otp }))
     if (verifyOtp.fulfilled.match(result)) {
       console.log("OTP verified successfully");
-      
+      toast.success('user registered successfully')
       navigate('/login')
     } else {
       console.log(result.payload.message || "OTP verification failed")
@@ -73,7 +83,7 @@ function VerifyOtp() {
           <Label htmlFor="otp">OTP</Label>
           <Input
             id="otp"
-            type="text"
+            type="number"
             maxLength={6}
             {...register("otp", { required: "OTP is required" })}
             placeholder="Enter 6-digit OTP"
@@ -83,7 +93,7 @@ function VerifyOtp() {
           )}
         </div>
 
-        <Button type="submit" className="w-full cursor-pointer">Verify OTP</Button>
+        <Button type="submit" className="w-full cursor-pointer text-white">Verify OTP</Button>
       </form>
 
       <div className="text-center mt-4">

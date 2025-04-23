@@ -3,7 +3,17 @@ const router = express.Router();
 import upload from '../middleware/multer.js';
 
 
-import {registerUser,loginUser,refreshToken, getLoggedInUser, logoutUser, checkEmailExists, forgotPasswordController, resetPasswordController, verifyOTPController, resendOtpController, updateUserProfile} from '../controllers/userController.js'
+import {registerUser,
+    loginUser,
+    refreshToken, 
+    getLoggedInUser, 
+    logoutUser, 
+    checkEmailExists, 
+    forgotPasswordController, 
+    resetPasswordController, 
+    verifyOTPController, 
+    resendOtpController, 
+    updateUserProfile} from '../controllers/userController.js'
 import authenticate from '../middleware/authMiddleware.js';
 import {googleLogin} from '../controllers/authController.js';
 
@@ -19,5 +29,7 @@ router.post('/forgot-password',forgotPasswordController)
 router.post('/reset-password',resetPasswordController)
 router.get('/google',googleLogin)
 router.put('/profile', authenticate,upload.single('profilePic'), updateUserProfile);
+
+
 
 export default router

@@ -17,6 +17,7 @@ export const googleAuthService = async (code) => {
   );
 
   const { email, name, picture } = userRes.data;
+  console.log(userRes.data)
 
   let user = await User.findOne({ email });
   if (!user) {

@@ -4,6 +4,7 @@ dotenv.config();
 import express from 'express';
 import connectDB from './config/db.js';
 import cors from 'cors';
+import { Server } from 'socket.io';
 
 import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routes/userRoutes.js'
@@ -15,7 +16,7 @@ const app=express();
 app.use(express.json())
 
 
-console.log('✅ ENV TEST:', process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET);
+//console.log('ENV TEST:', process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET);
 
 connectDB();
 const corsOptions = {
