@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,24 +10,69 @@ import {
 
 import { LogOut, User, Bell } from "lucide-react"; 
 import { logoutUser } from "../features/authSlice";
-import Button from "./ui/Button";
+import { addNotification,markNotificationAsRead ,fetchNotifications} from "../features/notificationSlice";
+
 import meetlogo from '../assets/meetlogo.png'
+import socket from "../socket";
+socket.on("connect", () => {
+  console.log("🔌 Frontend socket connected:", socket.id);
+});
+
 
 function Topbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
-
+  const {notifications} = useSelector((state) => state.notifications)
   
-  const unreadNotifications = 5;
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchNotifications());
+    }
+  }, [isAuthenticated, dispatch]);
+
+  // Handle real-time notifications
+  useEffect(() => {
+    const handleNewNotification = (notification) => {
+      dispatch(fetchNotifications()); // pull latest from backend
+    };
+  
+    if (isAuthenticated) {
+      socket.on("receive_notification", handleNewNotification);
+    }
+  
+    return () => {
+      socket.off("receive_notification", handleNewNotification);
+    };
+  }, [dispatch, isAuthenticated]);
+  
+   
+
+
+  useEffect(() => {
+    if (isAuthenticated && user?._id) {
+      socket.emit("register", user._id); // backend logs this
+      console.log("📡 Registering socket for user:", user._id);
+    }
+  }, [isAuthenticated, user?._id]);
+  
+  
+
+  const unreadNotifications = notifications.filter(n => !n.isRead).length;
+
+  const handleNotificationClick = async (notificationId) => {
+    if (!notificationId) return;
+    await dispatch(markNotificationAsRead(notificationId));
+  };
+  
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate("/login");
   };
 
-  const handleSignIn = () => navigate("/login");
-  const handleSignUp = () => navigate("/register");
+  // const handleSignIn = () => navigate("/login");
+  // const handleSignUp = () => navigate("/register");
 
   return (
     <div className="fixed top-0 left-0 w-full z-50 flex justify-between px-6 py-4 bg-white shadow-sm items-center gap-4">
@@ -45,26 +90,51 @@ function Topbar() {
       </div>
 
       
-      {!isAuthenticated ? (
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={handleSignIn}>
-            Sign In
-          </Button>
-          <Button onClick={handleSignUp}>
-            Sign Up
-          </Button>
-        </div>
-      ) : (
+      {isAuthenticated && (
         <div className="relative flex items-center gap-3">
-
-          <div className="relative">
-            <Bell className="w-6 h-6 text-gray-800 cursor-pointer" />
-            {unreadNotifications > 0 && (
-              <div className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-xs rounded-full flex items-center justify-center">
-                {unreadNotifications}
+          <DropdownMenu
+            onOpenChange={(isOpen) => {
+              if (isOpen && unreadNotifications > 0) {
+                dispatch(markNotificationAsRead());
+              }
+            }}
+          >
+            <DropdownMenuTrigger asChild>
+              <div className="relative cursor-pointer">
+                <Bell className="w-6 h-6 text-gray-800" />
+                {unreadNotifications > 0 && (
+                  <div className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadNotifications}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-80">
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">No notifications</div>
+                ) : (
+                  notifications.map((notification, index) => (
+                    <DropdownMenuItem
+                      key={notification._id || index}
+                      className={`p-3 border-b cursor-pointer ${!notification.isRead ? 'bg-blue-50' : ''}`}
+                      onClick={() => handleNotificationClick(notification._id)}
+                    >
+                      <div>
+                        <div className="font-medium">{notification.title}</div>
+                        <div className="text-sm text-gray-600">{notification.message}</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(notification.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                  
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           
           <DropdownMenu>
@@ -102,4 +172,4 @@ function Topbar() {
   );
 }
 
-export default Topbar;
+export default Topbar;   

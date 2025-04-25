@@ -11,4 +11,6 @@ router.patch('/update/:id',authenticate,updateMeeting)
 router.delete('/delete/:id',authenticate,deleteMeeting)
 
 
+
+
 export default router

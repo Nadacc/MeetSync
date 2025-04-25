@@ -152,7 +152,7 @@ export const checkEmailExists = asyncHandler(async (req, res) => {
     });
   }
 
-  res.status(200).json({ exists: true, isGoogleUser: user.isGoogleUser });
+  res.status(200).json({ exists: true, isGoogleUser: user.isGoogleUser,userId: user._id });
 });
 
 

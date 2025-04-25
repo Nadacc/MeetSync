@@ -61,8 +61,16 @@ const meetingSlice = createSlice({
     invited: [],
     loading: false,
     error: null,
+    refreshNeeded:false
   },
-  reducers: {},
+  reducers: {
+    refreshNeeded: (state) => {
+      state.refreshNeeded = true;
+    },
+    clearRefreshNeeded: (state) => {
+      state.refreshNeeded = false;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(createMeeting.pending, (state) => {
@@ -107,4 +115,6 @@ const meetingSlice = createSlice({
   },
 });
 
+
+export const { refreshNeeded, clearRefreshNeeded } = meetingSlice.actions;
 export default meetingSlice.reducer;

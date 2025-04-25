@@ -4,15 +4,18 @@ dotenv.config();
 import express from 'express';
 import connectDB from './config/db.js';
 import cors from 'cors';
-import { Server } from 'socket.io';
+import http from 'http'
 
 import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routes/userRoutes.js'
 import cookieParser from 'cookie-parser';
 import meetingRoutes from './routes/meetingRoutes.js'
 import availabilityRoutes from './routes/availabilityRoutes.js'
+import notificationRoutes from './routes/notificationRoutes.js'
+import { initSocket } from './socket.js';
 
 const app=express();
+const server = http.createServer(app)
 app.use(express.json())
 
 
@@ -31,11 +34,14 @@ app.use(cookieParser());
 app.use('/api/users',userRoutes)
 app.use('/api/meetings',meetingRoutes)
 app.use('/api/availability',availabilityRoutes)
+app.use('/api/notifications',notificationRoutes)
 
 
 app.use(errorHandler)
+
+initSocket(server, process.env.CLIENT_URL);
 const PORT =  8080;
-app.listen(PORT,() => {
+server.listen(PORT,() => {
     console.log(`Server is running on ${PORT}`);
-    
+    console.log(`📱 Socket.io server initialized`);
 })

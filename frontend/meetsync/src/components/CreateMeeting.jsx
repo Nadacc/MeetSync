@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { meetingSchema } from '../utils/Validation/meetingSchema';
 import toast from 'react-hot-toast';
 import { yupResolver } from '@hookform/resolvers/yup';
+import socket from '../socket';
 
 function convertToISO(dateStr, timeStr, timezone) {
   const [hourMinute, meridian] = timeStr.split(' ');
@@ -226,6 +227,45 @@ function CreateMeeting() {
       }
 
       if (createMeeting.fulfilled.match(resultAction) || updateMeeting.fulfilled.match(resultAction)) {
+        const validAttendees = attendees.filter(email => email.trim());
+        console.log("✅ Meeting saved, getting user IDs for attendees...");
+
+const attendeePromises = validAttendees.map(async (attendeeEmail) => {
+  try {
+    const res = await axiosInstance.get(`/users/check-email?email=${attendeeEmail}&context=attendee-check`);
+    if (res.status === 200 && res.data.exists) {
+      console.log("✅ Found user ID for:", attendeeEmail, "->", res.data.userId);
+      return res.data.userId;
+    } else {
+      console.warn("❌ No user found for:", attendeeEmail);
+    }
+  } catch (err) {
+    console.error("❌ Error getting user ID:", err);
+  }
+});
+
+const attendeeIds = await Promise.all(attendeePromises);
+
+console.log("🎯 Final receiver IDs:", attendeeIds);
+
+for (const receiverId of attendeeIds) {
+  if (receiverId) {
+    const notification = {
+      title: meetingToEdit ? 'Meeting Updated' : 'New Meeting Invitation',
+      message: `${user.name || user.email} has ${meetingToEdit ? 'updated' : 'invited you to'} a meeting: ${data.title}`,
+      
+    };
+
+    console.log("🔔 Sending socket notification to:", receiverId);
+
+    socket.emit('send_notification', {
+      receiverId,
+      notification
+    });
+  }
+}
+
+        
         reset();
         setAttendees(['']);
         setAvailableSlots([]);

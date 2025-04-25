@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/ui/Header';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMeetings } from '../features/meetingSlice';
+import { fetchMeetings,clearRefreshNeeded } from '../features/meetingSlice';
 import MeetingCard from '../components/MeetingCard';
 import MeetingModal from '../components/MeetingModal';
 
 const Meeting = () => {
   const dispatch = useDispatch();
-  const { created, invited, loading, error } = useSelector((state) => state.meeting);
+  const { created, invited, loading, error,refreshNeeded } = useSelector((state) => state.meeting);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const userTimezone = useSelector((state) => state.auth.user?.timezone);
   const [formMode, setFormMode] = useState(null);
@@ -18,6 +18,15 @@ const Meeting = () => {
     dispatch(fetchMeetings());
   }, [dispatch]);
 
+
+  useEffect(() => {
+    if (refreshNeeded) {
+      dispatch(fetchMeetings());
+      dispatch(clearRefreshNeeded());
+    }
+  }, [refreshNeeded, dispatch]);
+
+  
   const onlineCreated = created.filter((meeting) => meeting.type === 'online');
   const onlineInvited = invited.filter((meeting) => meeting.type === 'online');
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMeetings } from '../features/meetingSlice';
+import { fetchMeetings,clearRefreshNeeded } from '../features/meetingSlice';
 import Header from './ui/Header';
 import Calender from './Calender';
 import { DateTime } from 'luxon';
@@ -22,7 +22,7 @@ const formatTime = (dateString, meetingZone, userZone) => {
 const MainCalendar = () => {
     const dispatch = useDispatch();
    
-    const { created, invited, loading, error } = useSelector((state) => state.meeting);
+    const { created, invited, loading, error,refreshNeeded } = useSelector((state) => state.meeting);
     const userTimezone = useSelector((state) => state.auth.user?.timezone);
   
     const [selectedDate, setSelectedDate] = useState(null);
@@ -58,6 +58,15 @@ const MainCalendar = () => {
       dispatch(fetchMeetings());
     }, [dispatch]);
   
+
+    useEffect(() => {
+      if (refreshNeeded) {
+        dispatch(fetchMeetings());
+        dispatch(clearRefreshNeeded());
+      }
+    }, [refreshNeeded, dispatch]);
+
+
     const handleDateClick = (dateStr) => {
       setSelectedDate(dateStr);
       setIsModalOpen(true);

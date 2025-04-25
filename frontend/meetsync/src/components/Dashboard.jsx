@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "./ui/Header";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchMeetings } from "../features/meetingSlice";
+import { fetchMeetings ,clearRefreshNeeded} from "../features/meetingSlice";
 import MeetingCard from "./MeetingCard";
 import MeetingModal from "./MeetingModal";
 import { DateTime } from "luxon";
@@ -9,7 +9,7 @@ import { Tabs, Tab } from '../components/ui/Tabs'
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-  const { created, invited, loading, error } = useSelector((state) => state.meeting);
+  const { created, invited, loading, error,refreshNeeded} = useSelector((state) => state.meeting);
   const userTimezone = useSelector((state) => state.auth.user?.timezone);
 
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -21,6 +21,13 @@ const Dashboard = () => {
   useEffect(() => {
     dispatch(fetchMeetings());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (refreshNeeded) {
+      dispatch(fetchMeetings());
+      dispatch(clearRefreshNeeded());
+    }
+  }, [refreshNeeded, dispatch]);
 
   const closeModal = () => setSelectedMeeting(null);
 
