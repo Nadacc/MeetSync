@@ -83,4 +83,14 @@ export const updateMeetingService = async (id, data, userId) => {
   
     await Meeting.deleteOne({ _id: id });
   };
+
+  export const getMeetingByIdService = async (meetingId) => {
+    const meeting = await Meeting.findById(meetingId)
+      .populate('organizer', 'name email')
+      .populate('attendees', 'name email');
+    if (!meeting) {
+      throw new Error('Meeting not found');
+    }
+    return meeting;
+  };
   

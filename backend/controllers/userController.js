@@ -144,7 +144,7 @@ export const checkEmailExists = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "User not found", exists: false });
   }
 
-  // Only block Google users in password reset context
+  
   if (context === 'password-reset' && user.isGoogleUser) {
     return res.status(400).json({
       message: "Google user can't reset password",
@@ -198,10 +198,10 @@ export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, timezone } = req.body;
-    console.log("Uploaded File Info:", req.file); // Check the file data
-    console.log("Form Data:", req.body); // Log the rest of the form data
+    console.log("Uploaded File Info:", req.file); 
+    console.log("Form Data:", req.body); 
 
-    const profilePic = req.file?.path; // The path to the uploaded file
+    const profilePic = req.file?.path; 
 
     const updatedData = {
       ...(name && { name }),
@@ -217,7 +217,7 @@ export const updateUserProfile = async (req, res) => {
 
     res.json(updatedUser);
   } catch (error) {
-    console.error("Error updating profile:", error); // Log error details
+    console.error("Error updating profile:", error); 
     res.status(500).json({ message: "Error updating profile", error: error.message });
   }
 };

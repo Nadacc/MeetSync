@@ -52,6 +52,18 @@ export const createMeeting = createAsyncThunk(
       }
     }
   );
+
+  export const fetchMeetingById = createAsyncThunk(
+    'meetings/fetchMeetingById',
+    async (meetingId, { rejectWithValue }) => {
+      try {
+        const response = await axiosInstance.get(`/meetings/${meetingId}`);
+        return response.data.meeting || response.data;
+      } catch (err) {
+        return rejectWithValue(err.response?.data?.message || err.message);
+      }
+    }
+  );
   
   
 const meetingSlice = createSlice({
@@ -111,7 +123,18 @@ const meetingSlice = createSlice({
       .addCase(deleteMeeting.fulfilled, (state, action) => {
         state.created = state.created.filter(m => m._id !== action.payload);
       })
-      
+      .addCase(fetchMeetingById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMeetingById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedMeeting = action.payload;
+      })
+      .addCase(fetchMeetingById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
   },
 });
 

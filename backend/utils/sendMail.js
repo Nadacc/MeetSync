@@ -17,4 +17,7 @@ const sendOTPEmail = async ({ to, subject, html }) => {
   });
 };
 
+
+
+
 export default sendOTPEmail;

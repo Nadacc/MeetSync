@@ -1,12 +1,14 @@
-import React from 'react';
-import { CalendarDays, MapPin, Video, Clock, Users,X } from 'lucide-react';
+import React, { useState } from 'react';
+import { CalendarDays, MapPin, Video, Clock, Users, X } from 'lucide-react';
 import { DateTime } from 'luxon';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { deleteMeeting } from '../features/meetingSlice';
 import { useNavigate } from 'react-router-dom';
 import Button from './ui/Button';
 import socket from '../socket';
 import axiosInstance from '../api/axiosInstance';
+import { createMeetingCall } from '../features/streamSlice';
+import PreMeetingModal from './PreMeetingModal';
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -35,11 +37,11 @@ const formatTime = (dateString, fromZone, toZone) => {
 };
 
 const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) => {
-  console.log("MeetingModal received meeting:", meeting);
-  if (!meeting) return null;
-
+  const [showPreMeetingModal, setShowPreMeetingModal] = useState(false);
   const dispatch = useDispatch();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth || {});
+  const isPastMeeting = new Date(meeting.endTime) < new Date();
 
   const handleDelete = () => {
     const confirm = window.confirm('Are you sure you want to cancel this meeting?');
@@ -47,56 +49,78 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
       dispatch(deleteMeeting(meeting._id))
         .unwrap()
         .then(() => {
-          // After successfully deleting, notify all attendees
           const attendeesEmails = meeting.attendees.map((attendee) => attendee.email);
-          
-          // Fetch user IDs of attendees (assuming you have a function for this)
+
           const attendeePromises = attendeesEmails.map(async (email) => {
             try {
               const res = await axiosInstance.get(`/users/check-email?email=${email}`);
               if (res.status === 200 && res.data.exists) {
-                return res.data.userId; // Assuming userId is returned in response
+                return res.data.userId;
               }
             } catch (error) {
               console.error("Error fetching user ID for email:", email, error);
             }
           });
-  
+
           Promise.all(attendeePromises).then((attendeeIds) => {
-            // Emit notification to each attendee
             attendeeIds.forEach((receiverId) => {
               if (receiverId) {
                 const notification = {
                   title: 'Meeting Canceled',
                   message: `The meeting "${meeting.title}" has been canceled by the organizer.`,
-                  
                 };
-  
-                // Emit socket event to send notification to the receiverId
+
                 socket.emit('send_notification', {
                   receiverId,
-                  notification
+                  notification,
                 });
               }
             });
           });
-  
+
           onClose();
         })
         .catch((err) => alert(`Failed to cancel: ${err}`));
     }
   };
-  
-  
+
   const handleEdit = () => {
     onEdit(meeting);
-    navigate('/app/create-meeting',{state:{meeting}})
+    navigate('/app/create-meeting', { state: { meeting } });
     onClose();
   };
 
-  const handleJoinMeeting = () => {
-    if (meeting.link) {
-      window.open(meeting.link, '_blank');
+  const handleJoinMeeting = async () => {
+    if (!user || !user._id || !meeting?._id) {
+      console.error('Missing userId or meetingId');
+      return;
+    }
+
+    const currentTime = new Date();
+    const meetingStartTime = new Date(meeting.startTime);
+
+    if (currentTime < meetingStartTime) {
+      setShowPreMeetingModal(true); // Show the pre-meeting modal
+      return;
+    }
+
+    try {
+      const response = await dispatch(createMeetingCall({
+        userId: user._id,
+        meetingId: meeting._id,
+        title: meeting.title || '',
+      })).unwrap();
+
+      console.log('Stream call created successfully:', response);
+
+      const callId = response.callId;
+      if (callId) {
+        navigate(`/call/${callId}`);
+      } else {
+        console.error('Missing callId in response');
+      }
+    } catch (error) {
+      console.error('Failed to start video call:', error);
     }
   };
 
@@ -107,15 +131,25 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
     return '';
   };
 
+  // Only show one modal at a time
+  if (showPreMeetingModal) {
+    return (
+      <PreMeetingModal 
+        startTime={meeting.startTime} 
+        userTimezone={userTimezone} 
+        onClose={() => setShowPreMeetingModal(false)} 
+      />
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white p-6 rounded-xl w-full max-w-lg shadow-lg relative">
-        
         <Button
           onClick={onClose}
-          className="absolute top-3 right-3  text-black-200 hover:bg-white bg-white text-lg"
+          className="absolute top-3 right-3 text-black-200 hover:bg-white bg-white text-lg"
         >
-          <X size={24} className='cursor-pointer'/>
+          <X size={24} className="cursor-pointer" />
         </Button>
         <h2 className="text-2xl font-semibold mb-4">{meeting.title}</h2>
         <div className="mb-2">
@@ -143,7 +177,7 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
           </div>
           <div className="flex items-center gap-2">
             <Clock size={16} />
-            {formatTime(meeting.startTime, meeting.timezone, userTimezone)} - 
+            {formatTime(meeting.startTime, meeting.timezone, userTimezone)} -
             {formatTime(meeting.endTime, meeting.timezone, userTimezone)}
           </div>
           <div className="flex items-center gap-2">
@@ -152,14 +186,13 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
           </div>
         </div>
 
-        
         {meeting.organizer?.name && (
           <div className="mt-3 text-sm text-gray-600">
             <strong>Organizer:</strong> {meeting.organizer.name}
           </div>
         )}
 
-        {meeting.type === 'online' && (
+        {meeting.type === 'online' && !isPastMeeting && (
           <Button
             onClick={handleJoinMeeting}
             className="mt-4 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
@@ -168,7 +201,7 @@ const MeetingModal = ({ meeting, onClose, isMyMeeting, userTimezone, onEdit }) =
           </Button>
         )}
 
-        {isMyMeeting && (
+        {isMyMeeting && !isPastMeeting && (
           <div className="flex gap-3 mt-4">
             <Button
               onClick={handleEdit}

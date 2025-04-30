@@ -10,6 +10,7 @@ import SearchableSelect from "../components/ui/SearchableSelect";
 import { timezones } from "../utils/timezones";
 import { updateUserProfile } from "../features/authSlice";
 import { FaUser, FaEdit } from "react-icons/fa"; 
+import toast from "react-hot-toast";
 
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -157,7 +158,7 @@ function Profile() {
                     )}
                 </div>
 
-                <Button type="submit" className="text-white">Save Changes</Button>
+                <Button type="submit" className="text-white cursor-pointer">Save Changes</Button>
             </form>
         </div>
     );

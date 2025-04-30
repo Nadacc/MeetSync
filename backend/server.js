@@ -13,6 +13,8 @@ import meetingRoutes from './routes/meetingRoutes.js'
 import availabilityRoutes from './routes/availabilityRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
 import { initSocket } from './socket.js';
+import streamRoutes from './routes/streamRoutes.js'
+import emailRoutes from './routes/emailRoute.js'
 
 const app=express();
 const server = http.createServer(app)
@@ -35,6 +37,8 @@ app.use('/api/users',userRoutes)
 app.use('/api/meetings',meetingRoutes)
 app.use('/api/availability',availabilityRoutes)
 app.use('/api/notifications',notificationRoutes)
+app.use('/api/stream',streamRoutes)
+app.use('/api/email',emailRoutes)
 
 
 app.use(errorHandler)

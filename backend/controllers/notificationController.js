@@ -18,12 +18,13 @@ export const markAsRead = async (req, res) => {
 };
 
 export const createNotification = async (req, res) => {
-  const { userId, title, message } = req.body;
+  const { userId, title, message,meetingId } = req.body;
 
   const notification = await Notification.create({
     user: userId,
     title,
     message,
+    meetingId
   });
 
   res.status(201).json(notification);

@@ -16,6 +16,7 @@ import { meetingSchema } from '../utils/Validation/meetingSchema';
 import toast from 'react-hot-toast';
 import { yupResolver } from '@hookform/resolvers/yup';
 import socket from '../socket';
+import AddAttendees from './AddAttendee';
 
 function convertToISO(dateStr, timeStr, timezone) {
   const [hourMinute, meridian] = timeStr.split(' ');
@@ -228,19 +229,19 @@ function CreateMeeting() {
 
       if (createMeeting.fulfilled.match(resultAction) || updateMeeting.fulfilled.match(resultAction)) {
         const validAttendees = attendees.filter(email => email.trim());
-        console.log("✅ Meeting saved, getting user IDs for attendees...");
+        console.log("Meeting saved, getting user IDs for attendees...");
 
 const attendeePromises = validAttendees.map(async (attendeeEmail) => {
   try {
     const res = await axiosInstance.get(`/users/check-email?email=${attendeeEmail}&context=attendee-check`);
     if (res.status === 200 && res.data.exists) {
-      console.log("✅ Found user ID for:", attendeeEmail, "->", res.data.userId);
+      console.log("Found user ID for:", attendeeEmail, "->", res.data.userId);
       return res.data.userId;
     } else {
-      console.warn("❌ No user found for:", attendeeEmail);
+      console.warn("No user found for:", attendeeEmail);
     }
   } catch (err) {
-    console.error("❌ Error getting user ID:", err);
+    console.error("Error getting user ID:", err);
   }
 });
 
@@ -253,7 +254,7 @@ for (const receiverId of attendeeIds) {
     const notification = {
       title: meetingToEdit ? 'Meeting Updated' : 'New Meeting Invitation',
       message: `${user.name || user.email} has ${meetingToEdit ? 'updated' : 'invited you to'} a meeting: ${data.title}`,
-      
+      meetingId:(meetingToEdit ? meetingToEdit._id : resultAction.payload._id)
     };
 
     console.log("🔔 Sending socket notification to:", receiverId);
@@ -346,6 +347,7 @@ for (const receiverId of attendeeIds) {
               >
                 <Plus size={20} />
               </button>
+              {/* <AddAttendees/> */}
             </div>
             {attendeeError && <p className="text-red-500 text-sm mt-1">{attendeeError}</p>}
 

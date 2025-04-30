@@ -41,6 +41,7 @@ export const initSocket = (httpServer, clientURL) => {
           user: receiverId,
           title: notification.title,
           message: notification.message,
+          meetingId:notification.meetingId,
           isRead: false,
         });
         console.log("💾 Saved notification to DB:", savedNotification);

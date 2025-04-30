@@ -26,6 +26,10 @@ import Meeting from './components/Meeting';
 import HomeLayout from './Pages/HomeLayout';
 import Profile from './Pages/Profile';
 import { Toaster } from 'react-hot-toast';
+import { StreamClientProvider } from './components/Video/StreamClientProvider';
+import CallProvider from './components/Video/CallProvider';
+import MeetingEnded from './components/MeetingEnded';
+//import CallPage from './components/Video/CallPage';
 
 function App() {
   const dispatch = useDispatch();
@@ -45,6 +49,7 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <StreamClientProvider>
       <>
         <Toaster position='top-right'/>
         <Routes>
@@ -68,10 +73,16 @@ function App() {
             <Route path="profile" element={<Profile />} />
           </Route>
 
+          <Route path="/call/:callId" element={<PrivateRoute><CallProvider /></PrivateRoute>} />
+          {/* <Route path="/call/:callId" element={<PrivateRoute><CallPage/></PrivateRoute>} /> */}
+          <Route path="/meeting-ended" element={<PrivateRoute><MeetingEnded/></PrivateRoute>}/>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </>
+      </StreamClientProvider>
     </GoogleOAuthProvider>
+    
   );
 }
 

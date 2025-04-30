@@ -10,6 +10,10 @@ const notificationSchema = new mongoose.Schema(
     },
     title: String,
     message: String,
+    meetingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Meeting",
+    },
     isRead: {
       type: Boolean,
       default: false,
