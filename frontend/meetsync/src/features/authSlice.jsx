@@ -1,8 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axiosInstance from '../api/axiosInstance'
-import { useNavigate } from 'react-router-dom';
 
-//import Cookies from 'js-cookie'
 
 
 export const loginUser = createAsyncThunk(

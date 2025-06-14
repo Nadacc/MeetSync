@@ -35,7 +35,7 @@ function App() {
   const dispatch = useDispatch();
   const authChecked = useAuthCheck();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  const loading = useSelector((state) => state.auth.loading);
+  
 
   useEffect(() => {
     if (authChecked && isAuthenticated) {
