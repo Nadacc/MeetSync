@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './ui/Header';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { createMeeting,updateMeeting } from '../features/meetingSlice';
+import { createMeeting, updateMeeting } from '../features/meetingSlice';
 import axiosInstance from '../api/axiosInstance';
 import { DateTime } from 'luxon';
 import Label from './ui/Label';
@@ -35,9 +35,8 @@ function convertToISO(dateStr, timeStr, timezone) {
     { zone: timezone }
   );
 
-  return dt.toUTC().toISO(); 
+  return dt.toUTC().toISO();
 }
-
 
 function CreateMeeting() {
   const location = useLocation();
@@ -49,10 +48,9 @@ function CreateMeeting() {
     handleSubmit,
     watch,
     reset,
-    setError,
-    formState:{errors},
+    formState: { errors },
   } = useForm({
-    resolver:yupResolver(meetingSchema),
+    resolver: yupResolver(meetingSchema),
     defaultValues: {
       title: meetingToEdit?.title || '',
       agenda: meetingToEdit?.agenda || '',
@@ -62,12 +60,10 @@ function CreateMeeting() {
     },
   });
 
-  console.log("Form Errors:", errors);
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.meeting);
-  const user = useSelector(state => state.auth.user);
+  const user = useSelector((state) => state.auth.user);
   const userId = user?._id;
   const userEmail = user?.email;
   const userTimezone = user?.timezone;
@@ -88,21 +84,19 @@ function CreateMeeting() {
   }, [prefilledDate, attendees]);
 
   useEffect(() => {
-    if (selectedDate && attendees.filter(e => e.trim()).length > 0) {
+    if (selectedDate && attendees.filter((e) => e.trim()).length > 0) {
       handleDateChange(selectedDate);
     }
   }, [attendees, duration]);
-  
+
   useEffect(() => {
     if (meetingToEdit) {
-      const initialAttendees = meetingToEdit.attendees.map(att => 
+      const initialAttendees = meetingToEdit.attendees.map((att) =>
         typeof att === 'string' ? att : att.email
       );
       setAttendees([...initialAttendees, '']);
-      
       const startDate = meetingToEdit.startTime.split('T')[0];
       setSelectedDate(startDate);
-      
       const startTime = DateTime.fromISO(meetingToEdit.startTime)
         .setZone(meetingToEdit.timezone)
         .toFormat('hh:mm a');
@@ -111,12 +105,11 @@ function CreateMeeting() {
         .toFormat('hh:mm a');
       const timeSlot = `${startTime} - ${endTime}`;
       setSelectedSlot(timeSlot);
-
       handleDateChange(startDate);
     }
   }, [meetingToEdit]);
 
-  const handleAddAttendee = async() => {
+  const handleAddAttendee = async () => {
     const newEmail = attendees[attendees.length - 1].trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -149,8 +142,8 @@ function CreateMeeting() {
         setAttendeeError('Email does not exist in the system.');
       }
     } catch (err) {
-      console.error("Error checking email:", err);
-      setAttendeeError('email does not exist');
+      console.error('Error checking email:', err);
+      setAttendeeError('Email does not exist');
     }
   };
 
@@ -162,11 +155,11 @@ function CreateMeeting() {
 
   const handleDateChange = async (date) => {
     setSelectedDate(date);
-    const validAttendees = attendees.filter(email => email.trim() !== '');
+    const validAttendees = attendees.filter((email) => email.trim() !== '');
     const timezone = userTimezone;
-  
+
     if (validAttendees.length === 0 || !userId || !userTimezone) return;
-  
+
     try {
       const url = `/availability?date=${date}&attendees=${validAttendees.join(',')}&organizer=${userId}&duration=${duration}&timezone=${timezone}`;
       const res = await axiosInstance.get(url);
@@ -176,97 +169,84 @@ function CreateMeeting() {
         setAvailableSlots([]);
       }
     } catch (err) {
-      console.error("Error fetching availability:", err);
+      console.error('Error fetching availability:', err);
       setAvailableSlots([]);
     }
   };
-  
-  
+
+  const handleCancel = () => {
+    navigate('/app/dashboard');
+  };
 
   const onSubmit = async (data) => {
-    console.log('Submitting form with data',data);
-    
     if (!selectedSlot) {
-      toast.error("Please select a time slot.");
+      toast.error('Please select a time slot.');
       return;
     }
-  
-    if (attendees.filter(email => email.trim()).length === 0) {
-      setAlert({ message: "Please add at least one attendee.", type: 'error' });
+
+    if (attendees.filter((email) => email.trim()).length === 0) {
+      setAlert({ message: 'Please add at least one attendee.', type: 'error' });
       return;
     }
-  
+
     const [rawStart, rawEnd] = selectedSlot.split(' - ');
-    const timezone = userTimezone
-  
+    const timezone = userTimezone;
+
     const startTime = convertToISO(selectedDate, rawStart, timezone);
     const endTime = convertToISO(selectedDate, rawEnd, timezone);
-  
+
     const payload = {
       ...data,
-      attendees: attendees.filter(email => email.trim()),
+      attendees: attendees.filter((email) => email.trim()),
       startTime,
       endTime,
       timezone,
       date: selectedDate,
     };
-    
-  
+
     if (data.type !== 'in-person') {
       delete payload.location;
     }
-  
+
     try {
       let resultAction;
       if (meetingToEdit) {
-        resultAction = await dispatch(updateMeeting({ 
-          id: meetingToEdit._id, 
-          meeting: payload 
-        }));
+        resultAction = await dispatch(updateMeeting({ id: meetingToEdit._id, meeting: payload }));
       } else {
         resultAction = await dispatch(createMeeting(payload));
       }
 
       if (createMeeting.fulfilled.match(resultAction) || updateMeeting.fulfilled.match(resultAction)) {
-        const validAttendees = attendees.filter(email => email.trim());
-        console.log("Meeting saved, getting user IDs for attendees...");
+        const validAttendees = attendees.filter((email) => email.trim());
 
-const attendeePromises = validAttendees.map(async (attendeeEmail) => {
-  try {
-    const res = await axiosInstance.get(`/users/check-email?email=${attendeeEmail}&context=attendee-check`);
-    if (res.status === 200 && res.data.exists) {
-      console.log("Found user ID for:", attendeeEmail, "->", res.data.userId);
-      return res.data.userId;
-    } else {
-      console.warn("No user found for:", attendeeEmail);
-    }
-  } catch (err) {
-    console.error("Error getting user ID:", err);
-  }
-});
+        const attendeePromises = validAttendees.map(async (attendeeEmail) => {
+          try {
+            const res = await axiosInstance.get(`/users/check-email?email=${attendeeEmail}&context=attendee-check`);
+            if (res.status === 200 && res.data.exists) {
+              return res.data.userId;
+            }
+          } catch (err) {
+            console.error('Error getting user ID:', err);
+          }
+        });
 
-const attendeeIds = await Promise.all(attendeePromises);
+        const attendeeIds = await Promise.all(attendeePromises);
 
-console.log("🎯 Final receiver IDs:", attendeeIds);
+        for (const receiverId of attendeeIds) {
+          if (receiverId) {
+            const notification = {
+              title: meetingToEdit ? 'Meeting Updated' : 'New Meeting Invitation',
+              message: `${user.name || user.email} has ${meetingToEdit ? 'updated' : 'invited you to'} a meeting: ${data.title}`,
+              meetingId: meetingToEdit ? meetingToEdit._id : resultAction.payload._id,
+            };
 
-for (const receiverId of attendeeIds) {
-  if (receiverId) {
-    const notification = {
-      title: meetingToEdit ? 'Meeting Updated' : 'New Meeting Invitation',
-      message: `${user.name || user.email} has ${meetingToEdit ? 'updated' : 'invited you to'} a meeting: ${data.title}`,
-      meetingId:(meetingToEdit ? meetingToEdit._id : resultAction.payload._id)
-    };
+            socket.emit('send_notification', {
+              receiverId,
+              notification,
+            });
+          }
+        }
 
-    console.log("🔔 Sending socket notification to:", receiverId);
-
-    socket.emit('send_notification', {
-      receiverId,
-      notification
-    });
-  }
-}
-
-        
         reset();
         setAttendees(['']);
         setAvailableSlots([]);
@@ -277,91 +257,140 @@ for (const receiverId of attendeeIds) {
       }
     } catch (error) {
       toast.error('An error occurred while creating the meeting. Please try again.');
-
     }
   };
-  
 
   return (
-    <div>
-      <Header title={meetingToEdit ? "Edit Meeting" : "Create Meeting"} />
-      <div className="max-w-3xl mx-auto p-4 space-y-8">
-      {alert.message && (
-        <AlertBox
-          message={alert.message}
-          type={alert.type}
-          onClose={() => setAlert({ message: '', type: '' })}
-        />
-      )}
+    <div className="min-h-screen bg-gray-100">
+      <Header title={meetingToEdit ? 'Edit Meeting' : 'Create Meeting'} className="bg-white shadow-md" />
+      <div className="max-w-4xl mx-auto p-6">
+        {alert.message && (
+          <AlertBox
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert({ message: '', type: '' })}
+            className="mb-6"
+          />
+        )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow-lg space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="bg-white p-8 rounded-2xl shadow-lg space-y-8"
+        >
+          {/* Title */}
           <div>
-            <Label>Title</Label>
-            <Input {...register('title')} placeholder="Meeting Title" />
-            {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+            <Label className="text-gray-700 font-semibold">Title</Label>
+            <Input
+              {...register('title')}
+              placeholder="Enter meeting title"
+              className="mt-2 w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+            />
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>
+            )}
           </div>
 
+          {/* Agenda */}
           <div>
-            <Label>Agenda</Label>
-            <Textarea {...register('agenda')} placeholder="Agenda" />
-            {errors.agenda && <p className="text-red-500 text-sm">{errors.agenda.message}</p>}
+            <Label className="text-gray-700 font-semibold">Agenda</Label>
+            <Textarea
+              {...register('agenda')}
+              placeholder="Describe the meeting agenda"
+              className="mt-2 w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+            />
+            {errors.agenda && (
+              <p className="mt-1 text-sm text-red-500">{errors.agenda.message}</p>
+            )}
           </div>
 
+          {/* Meeting Type */}
           <div className="flex items-center gap-6">
-            <Label>
-              <input type="radio" value="online" {...register('type')} defaultChecked />
+            <Label className="flex items-center text-gray-700 font-semibold">
+              <input
+                type="radio"
+                value="online"
+                {...register('type')}
+                className="mr-2 accent-blue-600"
+                defaultChecked
+              />
               Online
             </Label>
-            <Label>
-              <input type="radio" value="in-person" {...register('type')} />
+            <Label className="flex items-center text-gray-700 font-semibold">
+              <input
+                type="radio"
+                value="in-person"
+                {...register('type')}
+                className="mr-2 accent-blue-600"
+              />
               In-Person
             </Label>
           </div>
 
+          {/* Location (for in-person) */}
           {meetingType === 'in-person' && (
             <div>
-              <Label>Location</Label>
-              <Input {...register('location')} placeholder="Location" />
-              {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
+              <Label className="text-gray-700 font-semibold">Location</Label>
+              <Input
+                {...register('location')}
+                placeholder="Enter meeting location"
+                className="mt-2 w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.location && (
+                <p className="mt-1 text-sm text-red-500">{errors.location.message}</p>
+              )}
             </div>
           )}
 
+          {/* Duration */}
           <div>
-            <Label>Duration (minutes)</Label>
-            <Input type="number" {...register('duration')} placeholder="30" />
-            {errors.duration && <p className="text-red-500 text-sm">{errors.duration.message}</p>}
+            <Label className="text-gray-700 font-semibold">Duration (minutes)</Label>
+            <Input
+              type="number"
+              {...register('duration')}
+              placeholder="30"
+              className="mt-2 w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+            />
+            {errors.duration && (
+              <p className="mt-1 text-sm text-red-500">{errors.duration.message}</p>
+            )}
           </div>
 
+          {/* Attendees */}
           <div>
-            <Label>Attendees</Label>
-            <div className="relative">
+            <Label className="text-gray-700 font-semibold">Attendees</Label>
+            <div className="relative mt-2">
               <Input
                 value={attendees[attendees.length - 1]}
                 onChange={(e) => handleAttendeeChange(attendees.length - 1, e.target.value)}
                 placeholder={`Attendee ${attendees.length} Email`}
+                className="w-full pr-12 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="button"
                 onClick={handleAddAttendee}
-                className="absolute inset-y-0 right-2 flex items-center justify-center text-blue-600 hover:text-blue-800"
+                className="absolute inset-y-0 right-3 flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors"
               >
                 <Plus size={20} />
               </button>
-              {/* <AddAttendees/> */}
             </div>
-            {attendeeError && <p className="text-red-500 text-sm mt-1">{attendeeError}</p>}
+            {attendeeError && (
+              <p className="mt-1 text-sm text-red-500">{attendeeError}</p>
+            )}
 
-            <div className="flex flex-wrap gap-2 mt-4 ">
+            <div className="flex flex-wrap gap-2 mt-4">
               {attendees.slice(0, -1).map((email, index) => (
-                <div key={index} className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
-                  <span >{email}</span>
+                <div
+                  key={index}
+                  className="flex items-center bg-blue-50 text-blue-800 text-sm px-3 py-1 rounded-full"
+                >
+                  <span>{email}</span>
                   <button
                     type="button"
                     onClick={() => {
                       const updated = attendees.filter((_, i) => i !== index);
                       setAttendees(updated);
                     }}
-                    className="ml-2 text-red-500 hover:text-red-700"
+                    className="ml-2 text-red-500 hover:text-red-700 transition-colors"
                   >
                     <X size={16} />
                   </button>
@@ -370,34 +399,52 @@ for (const receiverId of attendeeIds) {
             </div>
           </div>
 
+          {/* Date */}
           <div>
-            <Label>Date</Label>
+            <Label className="text-gray-700 font-semibold">Date</Label>
             <Input
               type="date"
               value={selectedDate}
               onChange={(e) => handleDateChange(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              disabled={attendees.filter(a => a.trim()).length === 0}
+              disabled={attendees.filter((a) => a.trim()).length === 0}
+              className="mt-2 w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
-
           </div>
 
-          {/* {loading && <p>Loading available slots...</p>} */}
-          {error && <div className="bg-red-100 text-red-700 p-2 rounded">Error: {error}</div>}
+          {/* Selected Time Slot (for editing) */}
+          {meetingToEdit && selectedSlot && (
+            <div>
+              <Label className="text-gray-700 font-semibold">Selected Time Slot</Label>
+              <div className="mt-2">
+                <div className="px-4 py-2 rounded-lg bg-blue-600 text-white border border-blue-600">
+                  {selectedSlot}
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 text-red-700 p-4 rounded-lg">
+              Error: {error}
+            </div>
+          )}
+
+          {/* Available Time Slots */}
           {availableSlots.length > 0 && (
             <div>
-              <Label>Available Time Slots:</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+              <Label className="text-gray-700 font-semibold">Available Time Slots</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
                 {availableSlots.map((slot, index) => (
                   <button
                     key={index}
                     type="button"
                     onClick={() => setSelectedSlot(slot)}
-                    className={`px-4 py-2 rounded-lg border transition-all duration-150 ${
+                    className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
                       selectedSlot === slot
                         ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white border-gray-300 hover:bg-blue-100'
+                        : 'bg-white border-gray-300 hover:bg-blue-50 hover:border-blue-300'
                     }`}
                   >
                     {slot}
@@ -407,17 +454,34 @@ for (const receiverId of attendeeIds) {
             </div>
           )}
 
-          {availableSlots.length === 0 && selectedDate && !loading && (
+          {/* No Slots Message */}
+          {availableSlots.length === 0 && selectedDate && !loading && !meetingToEdit && (
             <p className="text-gray-500 text-sm">No available slots for the selected date.</p>
           )}
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-green-500 text-white rounded-md hover:bg-green-600"
-          >
-            {loading ? 'Saving...' : meetingToEdit ? 'Update Meeting' : 'Create Meeting'}
-          </Button>
+          {/* Buttons */}
+          <div className="flex justify-end gap-4">
+            {meetingToEdit && (
+              <Button
+                type="button"
+                onClick={handleCancel}
+                className="py-3 px-6 rounded-lg bg-gray-500 text-white font-semibold hover:bg-gray-600 transition-all duration-200"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              type="submit"
+              disabled={loading}
+              className={`py-3 px-6 rounded-lg text-white font-semibold transition-all duration-200 ${
+                loading
+                  ? 'bg-green-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+              }`}
+            >
+              {loading ? 'Saving...' : meetingToEdit ? 'Update Meeting' : 'Create Meeting'}
+            </Button>
+          </div>
         </form>
       </div>
     </div>
